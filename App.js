@@ -8,7 +8,7 @@ import TelaLogin from './screens/TelaLogin';
 import Tabs from './Navigation'; // Aqui está o nosso componente com as Bottom Tabs
 import TelaTemas from './screens/TelaTemas';
 import TelaLinguagens from './screens/TelaLinguagens';
-import { AuthProvider } from './context/AuthContext'; // Adicionando a importação do AuthProvider
+import { AuthProvider } from './context/AuthContext'; 
 
 const Stack = createNativeStackNavigator();
 

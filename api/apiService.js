@@ -11,7 +11,7 @@ const getApiUrl = () => {
   } else {
     // Use o IP do seu computador na rede para dispositivos físicos
     // Você pode precisar alterar este IP para o correto da sua rede
-    return 'http://1:3000/api';
+    return 'http:///api';
   }
 };
 

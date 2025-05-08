@@ -100,46 +100,53 @@ export default function TelaPerfil({ navigation }) {
 
       {/* Modal flutuante */}
       <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisivel}
-        onRequestClose={() => setModalVisivel(false)}
-      >
-        <View style={estilos.overlayModal}>
-          <View style={estilos.cardModal}>
-            <TouchableOpacity
-              onPress={() => setModalVisivel(false)}
-              style={estilos.fecharVerde}
-            >
-              <Ionicons name="close" size={20} color="#fff" />
-            </TouchableOpacity>
+    animationType="fade"
+    transparent={true}
+    visible={modalVisivel}
+    onRequestClose={() => setModalVisivel(false)}
+  >
+    <View style={estilos.overlayModal}>
+      <View style={estilos.cardModal}>
+        <TouchableOpacity
+          onPress={() => setModalVisivel(false)}
+          style={estilos.fecharVerde}
+        >
+          <Ionicons name="close" size={20} color="#fff" />
+        </TouchableOpacity>
 
-            <Text style={estilos.saudacao}>Olá Henrique</Text>
+        <Text style={estilos.saudacao}>Olá Henrique</Text>
 
-            {[
-              { key: "nome", label: "Nome" },
-              { key: "nascimento", label: "Data de nascimento" },
-              { key: "codigo", label: "Código de funcionário" },
-              { key: "cargo", label: "Cargo" },
-            ].map((item) => (
-              <View key={item.key} style={estilos.campo}>
-                <Text style={estilos.label}>{item.label}</Text>
-                <View style={estilos.linhaInput}>
-                  <TextInput
-                    style={estilos.input}
-                    value={dadosFormulario[item.key]}
-                    onChangeText={(texto) => handleChange(item.key, texto)}
-                    editable={modoEdicao[item.key]}
-                  />
-                  <TouchableOpacity onPress={() => alternarEdicao(item.key)}>
-                    <Ionicons name="create-outline" size={20} color="#333" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
+        {[
+          { key: "nome", label: "Nome" },
+          { key: "nascimento", label: "Data de nascimento" },
+          { key: "codigo", label: "Código de funcionário" },
+          { key: "cargo", label: "Cargo" },
+        ].map((item) => (
+          <View key={item.key} style={estilos.campo}>
+            <Text style={estilos.label}>{item.label}</Text>
+            <View style={estilos.linhaInput}>
+              <TextInput
+                style={[
+                  estilos.input,
+                  modoEdicao[item.key] ? estilos.inputAtivo : {},
+                ]}
+                value={dadosFormulario[item.key]}
+                onChangeText={(texto) => handleChange(item.key, texto)}
+                editable={modoEdicao[item.key]}
+              />
+              <TouchableOpacity onPress={() => alternarEdicao(item.key)}>
+                <Ionicons
+                  name={modoEdicao[item.key] ? "checkmark-outline" : "create-outline"}
+                  size={20}
+                  color="#72B096"
+                />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </Modal>
+        ))}
+      </View>
+    </View>
+</Modal>
     </SafeAreaView>
   );
 }
@@ -232,5 +239,28 @@ const estilos = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#333",
+  },
+  inputAtivo: {
+  borderBottomColor: "#72B096",
+  fontWeight: "bold",
+  },
+  cardModal: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 20,
+    paddingTop: 30,
+    position: "relative",
+    alignItems: "center",
+  },
+  saudacao: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  campo: {
+    marginBottom: 16,
+    width: "100%",
   },
 });
