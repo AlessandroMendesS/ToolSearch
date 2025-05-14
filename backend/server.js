@@ -31,11 +31,11 @@ app.get('/', (req, res) => {
   res.send('API do aplicativo de gerenciamento de ferramentas está funcionando!');
 });
 
-// ✅ Rota de teste adicional para frontend verificar a API
+// Rota de teste adicional para frontend verificar a API
 app.get('/api/test', (req, res) => {
   res.json({ 
     success: true, 
-    message: 'API do aplicativo está funcionando corretamente!' 
+    message: 'API do aplicativo está funcionando corretamente com Supabase!' 
   });
 });
 
@@ -52,7 +52,9 @@ app.use((err, req, res, next) => {
 // Inicializar o banco de dados e iniciar o servidor
 const startServer = async () => {
   try {
+    // Verificar conexão com Supabase
     await setupDatabase();
+    
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Servidor rodando na porta ${PORT}`);
       console.log(`Acesse: http://localhost:${PORT}`);

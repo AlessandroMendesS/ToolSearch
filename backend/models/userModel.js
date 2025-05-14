@@ -1,5 +1,5 @@
 // models/userModel.js
-const { pool } = require('../config/db');
+const { supabase } = require('../config/db');
 const bcrypt = require('bcrypt');
 
 class User {
@@ -9,14 +9,23 @@ class User {
       // Hash da senha antes de armazenar no banco de dados
       const hashedSenha = await bcrypt.hash(senha, 10);
       
-      // Inserir usuário no banco de dados
-      const [result] = await pool.query(
-        'INSERT INTO usuarios (nome, senha) VALUES (?, ?)',
-        [nome, hashedSenha]
-      );
+      // Inserir usuário no Supabase
+      const { data, error } = await supabase
+        .from('usuarios')
+        .insert([
+          { nome, senha: hashedSenha }
+        ])
+        .select();
+      
+      if (error) {
+        if (error.code === '23505') { // Código de erro para violação de chave única
+          throw new Error('Este nome de usuário já está em uso');
+        }
+        throw new Error('Erro ao cadastrar usuário: ' + error.message);
+      }
       
       return {
-        id: result.insertId,
+        id: data[0].id,
         nome,
         message: 'Usuário cadastrado com sucesso!'
       };
@@ -28,13 +37,17 @@ class User {
   // Método para encontrar um usuário pelo nome
   static async findByName(nome) {
     try {
-      const [rows] = await pool.query('SELECT * FROM usuarios WHERE nome = ?', [nome]);
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('nome', nome)
+        .single();
       
-      if (rows.length > 0) {
-        return rows[0];
+      if (error && error.code !== 'PGRST116') { // PGRST116 = No rows found
+        throw new Error('Erro ao buscar usuário: ' + error.message);
       }
       
-      return null;
+      return data;
     } catch (error) {
       throw new Error('Erro ao buscar usuário: ' + error.message);
     }
