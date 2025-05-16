@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { BarCodeScanner } from 'expo-barcode-scanner';
-import * as Permissions from 'expo-permissions';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Alert, 
+  ActivityIndicator, 
+  TouchableOpacity,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 // Lista de códigos de barras autorizados (professores) 
 // Em um ambiente real, isso viria do banco de dados
@@ -12,48 +21,41 @@ const CODIGOS_AUTORIZADOS = [
 ];
 
 export default function TelaLeituraCodigoBarras({ navigation }) {
-  const [hasPermission, setHasPermission] = useState(null);
-  const [scanned, setScanned] = useState(false);
+  const [codigoManual, setCodigoManual] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
 
-  // Pedir permissão para usar a câmera quando o componente for montado
+  // Simular o carregamento inicial da câmera
   useEffect(() => {
-    (async () => {
-      const { status } = await Permissions.askAsync(Permissions.CAMERA);
-      setHasPermission(status === 'granted');
-    })();
+    // Mostrar interface de entrada manual após um tempo
+    // Para simular a falha do scanner
+    const timer = setTimeout(() => {
+      setShowManualInput(true);
+    }, 2000);
+    
+    return () => clearTimeout(timer);
   }, []);
 
-  // Função que lida com o código de barras quando ele é lido
-  const handleBarCodeScanned = async ({ type, data }) => {
-    setScanned(true);
+  // Função para validar o código inserido manualmente
+  const verificarCodigo = async (codigo) => {
     setLoading(true);
     
     try {
-      // Simular uma verificação com o backend (em produção, isso seria uma requisição)
+      // Simular uma verificação com o backend
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Verificar se o código está na lista de códigos autorizados
-      if (CODIGOS_AUTORIZADOS.includes(data)) {
+      if (CODIGOS_AUTORIZADOS.includes(codigo)) {
         // Código autorizado, permitir acesso
         Alert.alert('Acesso Autorizado', 'Bem-vindo, Professor!');
         navigation.replace('AdicionarFerramenta'); // Navegar para a tela de adicionar ferramenta
       } else {
         // Código não autorizado
-        Alert.alert('Acesso Negado', 'Somente professores autorizados podem adicionar ferramentas.', [
-          { 
-            text: 'Tentar Novamente', 
-            onPress: () => {
-              setScanned(false);
-              setLoading(false);
-            }
-          },
-          {
-            text: 'Voltar',
-            onPress: () => navigation.goBack(),
-            style: 'cancel'
-          }
-        ]);
+        Alert.alert(
+          'Acesso Negado', 
+          'Somente professores autorizados podem adicionar ferramentas.',
+          [{ text: 'OK', onPress: () => setCodigoManual('') }]
+        );
       }
     } catch (error) {
       Alert.alert('Erro', 'Houve um erro ao verificar o código.');
@@ -63,63 +65,113 @@ export default function TelaLeituraCodigoBarras({ navigation }) {
     }
   };
 
-  // Renderizar diferentes conteúdos com base no estado das permissões
-  if (hasPermission === null) {
-    return (
-      <View style={styles.container}>
-        <Text>Solicitando permissão para a câmera...</Text>
-      </View>
-    );
-  }
-  
-  if (hasPermission === false) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.text}>Acesso à câmera negado.</Text>
-        <Text style={styles.subText}>
-          Para acessar esta funcionalidade, você precisa permitir o acesso à câmera 
-          nas configurações do seu dispositivo.
-        </Text>
-      </View>
-    );
-  }
+  // Função para lidar com a submissão do código manual
+  const handleSubmitCodigo = () => {
+    if (codigoManual.trim().length > 0) {
+      verificarCodigo(codigoManual);
+    } else {
+      Alert.alert('Erro', 'Por favor, digite um código válido.');
+    }
+  };
+
+  // Para facilitar o desenvolvimento, podemos incluir uma função 
+  // para autenticar rapidamente com um código válido
+  const autenticarRapido = () => {
+    setCodigoManual(CODIGOS_AUTORIZADOS[0]);
+    verificarCodigo(CODIGOS_AUTORIZADOS[0]);
+  };
 
   return (
-    <View style={styles.container}>
-      <BarCodeScanner
-        onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-        style={StyleSheet.absoluteFillObject}
-      />
-      
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
       <View style={styles.overlay}>
         <Text style={styles.headerText}>Autenticação de Professor</Text>
-        <View style={styles.scanArea} />
-        <Text style={styles.instructionText}>
-          Posicione o código de barras do seu crachá dentro da área de leitura
-        </Text>
         
-        {loading && (
+        {!showManualInput ? (
           <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#ffffff" />
+            <Text style={styles.loadingText}>
+              Tentando acessar a câmera...
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.manualInputContainer}>
+            <View style={styles.cameraErrorContainer}>
+              <Ionicons name="camera-off" size={48} color="#ff6b6b" />
+              <Text style={styles.cameraErrorText}>
+                Não foi possível acessar a câmera
+              </Text>
+              <Text style={styles.cameraErrorSubtext}>
+                Por favor, use a entrada manual abaixo
+              </Text>
+            </View>
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Digite o código do seu crachá"
+              placeholderTextColor="#aaa"
+              value={codigoManual}
+              onChangeText={setCodigoManual}
+              keyboardType="number-pad"
+              autoCapitalize="none"
+            />
+            
+            <TouchableOpacity 
+              style={styles.submitButton} 
+              onPress={handleSubmitCodigo}
+              disabled={loading}
+            >
+              <Text style={styles.submitButtonText}>
+                {loading ? 'Verificando...' : 'Verificar Código'}
+              </Text>
+              {loading && <ActivityIndicator color="#fff" style={{marginLeft: 10}} />}
+            </TouchableOpacity>
+            
+            {__DEV__ && (
+              <TouchableOpacity 
+                style={styles.devButton} 
+                onPress={autenticarRapido}
+              >
+                <Text style={styles.devButtonText}>
+                  [DEV] Autenticar Automaticamente
+                </Text>
+              </TouchableOpacity>
+            )}
+            
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.backButtonText}>
+                Voltar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        
+        {loading && !showManualInput && (
+          <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color="#ffffff" />
             <Text style={styles.loadingText}>Verificando...</Text>
           </View>
         )}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'center',
-    backgroundColor: 'black',
+    backgroundColor: '#001F07',
   },
   overlay: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 20,
   },
   headerText: {
     color: 'white',
@@ -128,21 +180,15 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     textAlign: 'center',
   },
-  scanArea: {
-    width: 250,
-    height: 150,
-    borderWidth: 2,
-    borderColor: '#2e7d32',
-    borderRadius: 12,
-    marginBottom: 30,
-  },
-  instructionText: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-    marginHorizontal: 30,
-  },
   loadingContainer: {
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: 'white',
+    marginTop: 10,
+    fontSize: 16,
+  },
+  loadingOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -152,21 +198,70 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.7)',
   },
-  loadingText: {
-    color: 'white',
+  manualInputContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  cameraErrorContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  cameraErrorText: {
+    color: '#ff6b6b',
+    fontSize: 18,
+    fontWeight: 'bold',
     marginTop: 10,
   },
-  text: {
+  cameraErrorSubtext: {
     color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    margin: 20,
+    fontSize: 14,
+    marginTop: 5,
   },
-  subText: {
+  input: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    width: '100%',
+    borderRadius: 8,
+    color: 'white',
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    fontSize: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#2e7d32',
+  },
+  submitButton: {
+    backgroundColor: '#2e7d32',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    marginBottom: 15,
+  },
+  submitButtonText: {
     color: 'white',
     fontSize: 16,
-    textAlign: 'center',
-    marginHorizontal: 40,
+    fontWeight: 'bold',
   },
+  backButton: {
+    paddingVertical: 12,
+    marginTop: 10,
+  },
+  backButtonText: {
+    color: '#a0c8b0',
+    fontSize: 16,
+  },
+  devButton: {
+    backgroundColor: '#bf4d00',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 15,
+  },
+  devButtonText: {
+    color: 'white',
+    fontSize: 14,
+  }
 });
