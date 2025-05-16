@@ -4,7 +4,7 @@ import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TelaInicial from './screens/Home';
 import TelaPerfil from './screens/Perfil';
-import TelaAdicionarFerramenta from './screens/TelaAdicionarFerramenta'; 
+import TelaLeituraCodigoBarras from './screens/TelaLeituraCodigoBarras'; 
 import TelaPesquisarFerramentas from './screens/TelaPesquisarFerramentas';
 
 const Tab = createBottomTabNavigator();
@@ -56,7 +56,7 @@ export default function Tabs() {
 
       <Tab.Screen
         name="Adicionar"
-        component={TelaAdicionarFerramenta} 
+        component={TelaLeituraCodigoBarras} 
         options={{
           tabBarIcon: ({ focused }) => (
             <View style={estilos.bottomBarButton}>
