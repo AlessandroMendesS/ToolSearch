@@ -10,10 +10,11 @@ const getApiUrl = () => {
     return 'http://localhost:3000/api';
   } else {
     // Use o IP do seu computador na rede para dispositivos físicos
-    // Você pode precisar alterar este IP para o correto da sua rede
-    return 'http:///api';
+    // Altere este IP para o correto da sua máquina na rede
+    return 'http://192.168.137.23:3000/api'; // SUBSTITUA ESTE IP PELO IP DO SEU COMPUTADOR
   }
 };
+
 
 const API_URL = getApiUrl();
 console.log('Usando API URL:', API_URL); // Para debug
@@ -25,7 +26,7 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
   // Aumentar timeout para dar mais tempo para a resposta
-  timeout: 10000 
+  timeout: 15000 
 });
 
 // Interceptor para adicionar o token às requisições
@@ -36,7 +37,7 @@ apiClient.interceptors.request.use(
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-      console.log('Fazendo requisição para:', config.url, config.method);
+      console.log('Fazendo requisição para:', config.url, config.method, config.baseURL);
       return config;
     } catch (error) {
       console.error('Erro no interceptor de requisição:', error);
@@ -57,14 +58,30 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     console.error('Erro na resposta:', error);
+    
+    // Mensagem mais detalhada para debug
+    if (error.response) {
+      // O servidor respondeu com um status fora do intervalo 2xx
+      console.error('Erro do servidor:', error.response.status, error.response.data);
+    } else if (error.request) {
+      // A requisição foi feita mas não houve resposta
+      console.error('Sem resposta do servidor. Verifique IP/conexão e se o servidor está rodando.');
+      console.error('Detalhes do request:', error.request._url);
+    } else {
+      // Erro na configuração da requisição
+      console.error('Erro na configuração da requisição:', error.message);
+    }
+    
     // Verifica se é erro de timeout
     if (error.code === 'ECONNABORTED') {
-      console.error('Timeout na requisição');
+      console.error('Timeout na requisição - o servidor demorou muito para responder');
     }
+    
     // Verifica se é erro de rede
     if (error.message && error.message.includes('Network Error')) {
-      console.error('Erro de rede - verifique se o servidor está rodando');
+      console.error('Erro de rede - verifique sua conexão e se o servidor está acessível no IP correto');
     }
+    
     return Promise.reject(error);
   }
 );
@@ -75,6 +92,8 @@ export const authService = {
   register: async (userData) => {
     try {
       console.log('Tentando registrar usuário:', userData.nome);
+      console.log('URL de registro:', `${API_URL}/auth/register`);
+      
       const response = await apiClient.post('/auth/register', userData);
       
       if (response.data.token) {
@@ -92,8 +111,11 @@ export const authService = {
         return error.response.data;
       } else if (error.request) {
         // A requisição foi feita mas não houve resposta
-        console.error('Sem resposta do servidor:', error.request);
-        return { success: false, message: 'Servidor não respondeu. Verifique se o backend está rodando.' };
+        console.error('Sem resposta do servidor. Detalhes:', error.request._url);
+        return { 
+          success: false, 
+          message: 'Servidor não respondeu. Verifique se o backend está rodando e acessível no IP correto.' 
+        };
       } else {
         // Erro na configuração da requisição
         console.error('Erro na configuração da requisição:', error.message);
@@ -106,6 +128,8 @@ export const authService = {
   login: async (credentials) => {
     try {
       console.log('Tentando login com:', credentials.nome);
+      console.log('URL de login:', `${API_URL}/auth/login`);
+      
       const response = await apiClient.post('/auth/login', credentials);
       
       if (response.data.token) {
@@ -120,7 +144,10 @@ export const authService = {
       if (error.response) {
         return error.response.data;
       } else if (error.request) {
-        return { success: false, message: 'Servidor não respondeu. Verifique se o backend está rodando.' };
+        return { 
+          success: false, 
+          message: 'Servidor não respondeu. Verifique se o backend está rodando e acessível no IP correto.' 
+        };
       } else {
         return { success: false, message: 'Erro ao configurar requisição: ' + error.message };
       }
@@ -161,10 +188,18 @@ export const authService = {
   // Método de teste para verificar a conexão com o backend
   testConnection: async () => {
     try {
+      console.log('Testando conexão com:', `${API_URL}/test`);
       const response = await apiClient.get('/test');
       return { success: true, message: response.data.message };
     } catch (error) {
-      return { success: false, message: error.message };
+      console.error('Erro no teste de conexão:', error);
+      let mensagem = 'Erro de conexão';
+      
+      if (error.request) {
+        mensagem = `Servidor não encontrado. Verifique se o backend está rodando no IP correto: ${API_URL}`;
+      }
+      
+      return { success: false, message: mensagem };
     }
   }
 };
