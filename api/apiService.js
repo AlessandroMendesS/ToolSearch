@@ -11,7 +11,7 @@ const getApiUrl = () => {
   } else {
     // Use o IP do seu computador na rede para dispositivos físicos
     // Altere este IP para o correto da sua máquina na rede
-    return 'http://192.168.137.23:3000/api'; // SUBSTITUA ESTE IP PELO IP DO SEU COMPUTADOR
+    return 'http://26.110.33.76:3000/api'; // SUBSTITUA ESTE IP PELO IP DO SEU COMPUTADOR
   }
 };
 

@@ -1,64 +1,67 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, SafeAreaView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+const grupos = [
+  { nome: 'Furadeiras', imagem: require('../assets/img/furadeira.png') },
+  { nome: 'Chaves', imagem: require('../assets/img/chaves.png') },
+  { nome: 'Alicates', imagem: require('../assets/img/alicates.png') },
+];
+
 export default function TelaPesquisarFerramentas({ navigation }) {
+  const [grupoSelecionado, setGrupoSelecionado] = useState(null);
+  const [busca, setBusca] = useState('');
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#f2faf5" barStyle="dark-content" />
-      
+
       {/* Título */}
       <Text style={styles.title}>Pesquisar</Text>
-      
+
       {/* Campo de pesquisa */}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
-        <TextInput 
-          style={styles.searchInput} 
-          placeholder="Pesquisar ferramentas" 
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Pesquisar ferramentas"
           placeholderTextColor="#666"
+          value={busca}
+          onChangeText={setBusca}
         />
       </View>
-      
+
       {/* Cards de categorias */}
       <View style={styles.cardsContainer}>
-        {/* Card Furadeiras */}
-        <TouchableOpacity style={styles.card} onPress={() => {}}>
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>Furadeiras</Text>
-            <Image 
-              source={require('../assets/img/furadeira.png')} 
-              style={styles.cardImage} 
-              resizeMode="contain"
-            />
-          </View>
-        </TouchableOpacity>
-        
-        {/* Card Chaves */}
-        <TouchableOpacity style={styles.card} onPress={() => {}}>
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>Chaves</Text>
-            <Image 
-              source={require('../assets/img/chaves.png')} 
-              style={styles.cardImage} 
-              resizeMode="contain"
-            />
-          </View>
-        </TouchableOpacity>
-        
-        {/* Card Alicates */}
-        <TouchableOpacity style={styles.card} onPress={() => {}}>
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>Alicates</Text>
-            <Image 
-              source={require('../assets/img/alicates.png')} 
-              style={styles.cardImage} 
-              resizeMode="contain"
-            />
-          </View>
-        </TouchableOpacity>
+        {grupos.map((grupo) => (
+          <TouchableOpacity
+            key={grupo.nome}
+            style={[styles.card, grupoSelecionado === grupo.nome && { borderColor: '#7DA38C', borderWidth: 2 }]}
+            onPress={() => setGrupoSelecionado(grupo.nome)}
+          >
+            <View style={styles.cardContent}>
+              <Text style={styles.cardTitle}>{grupo.nome}</Text>
+              <Image source={grupo.imagem} style={styles.cardImage} resizeMode="contain" />
+            </View>
+          </TouchableOpacity>
+        ))}
       </View>
-      
+
+      {/* Exemplo visual de resultado (estático) */}
+      {grupoSelecionado && (
+        <View style={styles.ferramentaCard}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ marginLeft: 10 }}>
+              <Text style={styles.ferramentaNome}>Paquímetro</Text>
+              <Text style={styles.ferramentaLocal}>Local: Sala XX</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.ferramentaDisponivel}>Disponível:</Text>
+                <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#4caf50', marginLeft: 4 }} />
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -124,5 +127,34 @@ const styles = StyleSheet.create({
   cardImage: {
     width: 70,
     height: 40,
+  },
+  ferramentaCard: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#bbb',
+    padding: 12,
+    marginHorizontal: 18,
+    marginVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  ferramentaNome: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#222',
+  },
+  ferramentaLocal: {
+    fontSize: 13,
+    color: '#444',
+    marginTop: 2,
+  },
+  ferramentaDisponivel: {
+    fontSize: 13,
+    color: '#222',
+    marginTop: 2,
   },
 });

@@ -23,13 +23,15 @@ export default function AdicionarFerramenta() {
       Alert.alert('Erro', 'Por favor, informe o nome da ferramenta');
       return;
     }
+    setModalVisivel(true);
+  };
 
-    // Aqui você implementaria a lógica para salvar a ferramenta
-    Alert.alert(
-      'Sucesso',
-      'Ferramenta adicionada com sucesso!',
-      [{ text: 'OK', onPress: () => resetForm() }]
-    );
+  // Função para adicionar ferramenta ao grupo (simulado)
+  const handleAdicionarAoGrupo = (grupo) => {
+    // Apenas simulação visual
+    setModalVisivel(false);
+    Alert.alert('Sucesso', 'Ferramenta adicionada ao grupo!');
+    resetForm();
   };
 
   // Função para resetar o formulário
@@ -43,7 +45,7 @@ export default function AdicionarFerramenta() {
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>Adicionar Nova Ferramenta</Text>
-      
+
       {/* Upload imagem */}
       <TouchableOpacity style={styles.uploadArea}>
         <Ionicons name="cloud-upload-outline" size={48} color="#a0c8b0" />
@@ -52,10 +54,10 @@ export default function AdicionarFerramenta() {
 
       {/* Formulário */}
       <TextInput style={styles.input} placeholder="Nome" value={nome} onChangeText={setNome} />
-      <TextInput 
-        style={[styles.input, styles.inputMultiline]} 
-        placeholder="Detalhes" 
-        value={detalhes} 
+      <TextInput
+        style={[styles.input, styles.inputMultiline]}
+        placeholder="Detalhes"
+        value={detalhes}
         onChangeText={setDetalhes}
         multiline
       />
@@ -87,7 +89,7 @@ export default function AdicionarFerramenta() {
                 <View style={styles.grupoItem}>
                   <Image source={item.imagem} style={styles.grupoImagem} />
                   <Text style={styles.grupoTexto}>{item.nome}</Text>
-                  <TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleAdicionarAoGrupo(item)}>
                     <Ionicons name="add-circle" size={24} color="#2e7d32" />
                   </TouchableOpacity>
                 </View>
@@ -101,9 +103,9 @@ export default function AdicionarFerramenta() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 20, 
+  container: {
+    flex: 1,
+    padding: 20,
     backgroundColor: '#fff',
     paddingTop: 60,
   },
@@ -114,8 +116,8 @@ const styles = StyleSheet.create({
     color: '#2e7d32',
     textAlign: 'center',
   },
-  uploadArea: { 
-    alignItems: 'center', 
+  uploadArea: {
+    alignItems: 'center',
     marginBottom: 30,
     backgroundColor: '#f0f7f0',
     padding: 30,
@@ -124,10 +126,10 @@ const styles = StyleSheet.create({
     borderColor: '#a0c8b0',
     borderStyle: 'dashed',
   },
-  uploadText: { 
-    marginTop: 10, 
-    fontSize: 16, 
-    color: '#888' 
+  uploadText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#888'
   },
   input: {
     borderBottomWidth: 1,

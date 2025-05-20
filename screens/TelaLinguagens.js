@@ -1,18 +1,18 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Switch, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, Switch, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function TelaLinguagens({ navigation }) {
-  const [selecionado, setSelecionado] = useState("pt");
+  const [idioma, setIdioma] = useState('pt');
 
   const handleSelect = (lang) => {
-    setSelecionado(lang);
+    setIdioma(lang);
   };
 
   const Bandeira = ({ codigo, emoji }) => (
     <TouchableOpacity onPress={() => handleSelect(codigo)} style={estilos.itemBandeira}>
       <Text style={estilos.textoBandeira}>{emoji}</Text>
-      <Switch value={selecionado === codigo} onValueChange={() => handleSelect(codigo)} />
+      <Switch value={idioma === codigo} onValueChange={() => handleSelect(codigo)} />
     </TouchableOpacity>
   );
 

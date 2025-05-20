@@ -37,14 +37,14 @@ export default function BoasVindas({ navigation }) {
       {/* Botão de alternância */}
       <View style={estilos.botaoAlternancia}>
         <View style={estilos.deslizador} />
-        <TouchableOpacity 
+        <TouchableOpacity
           style={estilos.opcao}
           onPress={() => navigation.navigate('Cadastro')}
         >
           <Text style={estilos.textoBotao}>Registro</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={estilos.opcao}
           onPress={() => navigation.navigate('Login')}
         >
@@ -54,7 +54,6 @@ export default function BoasVindas({ navigation }) {
     </View>
   );
 }
-
 const estilos = StyleSheet.create({
   container: {
     flex: 1,
@@ -91,7 +90,7 @@ const estilos = StyleSheet.create({
     borderColor: "#fff",
     backgroundColor: "transparent",
     position: "absolute",
-    bottom: 60, 
+    bottom: 60,
   },
   deslizador: {
     position: "absolute",
@@ -112,3 +111,4 @@ const estilos = StyleSheet.create({
     color: "#000",
   },
 });
+

@@ -11,16 +11,18 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../context/AuthContext";
 
 export default function TelaPerfil({ navigation }) {
   const [imagemPerfil, setImagemPerfil] = useState(null);
   const [modalVisivel, setModalVisivel] = useState(false);
+  const { user } = useAuth();
 
   const [dadosFormulario, setDadosFormulario] = useState({
-    nome: "Henrique Gabriel Neves",
-    nascimento: "25/08/1956",
-    codigo: "14677250",
-    cargo: "Gerente",
+    nome: user?.nome || "",
+    nascimento: "",
+    codigo: "",
+    cargo: "",
   });
 
   const [modoEdicao, setModoEdicao] = useState({
@@ -100,53 +102,55 @@ export default function TelaPerfil({ navigation }) {
 
       {/* Modal flutuante */}
       <Modal
-    animationType="fade"
-    transparent={true}
-    visible={modalVisivel}
-    onRequestClose={() => setModalVisivel(false)}
-  >
-    <View style={estilos.overlayModal}>
-      <View style={estilos.cardModal}>
-        <TouchableOpacity
-          onPress={() => setModalVisivel(false)}
-          style={estilos.fecharVerde}
-        >
-          <Ionicons name="close" size={20} color="#fff" />
-        </TouchableOpacity>
+        animationType="fade"
+        transparent={true}
+        visible={modalVisivel}
+        onRequestClose={() => setModalVisivel(false)}
+      >
+        <View style={estilos.overlayModal}>
+          <View style={estilos.cardModal}>
+            <TouchableOpacity
+              onPress={() => setModalVisivel(false)}
+              style={estilos.fecharVerde}
+            >
+              <Ionicons name="close" size={20} color="#fff" />
+            </TouchableOpacity>
 
-        <Text style={estilos.saudacao}>Olá Henrique</Text>
+            <Text style={estilos.saudacao}>Olá {user?.nome}</Text>
 
-        {[
-          { key: "nome", label: "Nome" },
-          { key: "nascimento", label: "Data de nascimento" },
-          { key: "codigo", label: "Código de funcionário" },
-          { key: "cargo", label: "Cargo" },
-        ].map((item) => (
-          <View key={item.key} style={estilos.campo}>
-            <Text style={estilos.label}>{item.label}</Text>
-            <View style={estilos.linhaInput}>
-              <TextInput
-                style={[
-                  estilos.input,
-                  modoEdicao[item.key] ? estilos.inputAtivo : {},
-                ]}
-                value={dadosFormulario[item.key]}
-                onChangeText={(texto) => handleChange(item.key, texto)}
-                editable={modoEdicao[item.key]}
-              />
-              <TouchableOpacity onPress={() => alternarEdicao(item.key)}>
-                <Ionicons
-                  name={modoEdicao[item.key] ? "checkmark-outline" : "create-outline"}
-                  size={20}
-                  color="#72B096"
-                />
-              </TouchableOpacity>
-            </View>
+            {[
+              { key: "nome", label: "Nome", placeholder: "Digite seu nome completo" },
+              { key: "nascimento", label: "Data de nascimento", placeholder: "DD/MM/AAAA" },
+              { key: "codigo", label: "Código de funcionário", placeholder: "Digite seu código" },
+              { key: "cargo", label: "Cargo", placeholder: "Digite seu cargo" },
+            ].map((item) => (
+              <View key={item.key} style={estilos.campo}>
+                <Text style={estilos.label}>{item.label}</Text>
+                <View style={estilos.linhaInput}>
+                  <TextInput
+                    style={[
+                      estilos.input,
+                      modoEdicao[item.key] ? estilos.inputAtivo : {},
+                    ]}
+                    value={dadosFormulario[item.key]}
+                    onChangeText={(texto) => handleChange(item.key, texto)}
+                    editable={modoEdicao[item.key]}
+                    placeholder={item.placeholder}
+                    placeholderTextColor="#999"
+                  />
+                  <TouchableOpacity onPress={() => alternarEdicao(item.key)}>
+                    <Ionicons
+                      name={modoEdicao[item.key] ? "checkmark-outline" : "create-outline"}
+                      size={20}
+                      color="#72B096"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
           </View>
-        ))}
-      </View>
-    </View>
-</Modal>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -241,8 +245,8 @@ const estilos = StyleSheet.create({
     color: "#333",
   },
   inputAtivo: {
-  borderBottomColor: "#72B096",
-  fontWeight: "bold",
+    borderBottomColor: "#72B096",
+    fontWeight: "bold",
   },
   cardModal: {
     width: "80%",

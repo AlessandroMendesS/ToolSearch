@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 
 export default function TelaInicial({ navigation }) {
   useEffect(() => {
@@ -9,24 +9,25 @@ export default function TelaInicial({ navigation }) {
   }, []);
 
   return (
-    <View style={estilos.container}>
-      <Image source={require('../assets/img/logo.png')} style={estilos.logo} />
-      
+    <View style={styles.container}>
+      <Image
+        source={require('../assets/img/logo.png')}
+        style={styles.logo}
+      />
     </View>
   );
 }
 
-const estilos = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
     width: 356,
     height: 284,
-    justifyContent: "center",
-    alignItems: "center",
+    resizeMode: 'contain',
   }
 });
