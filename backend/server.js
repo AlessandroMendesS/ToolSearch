@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { setupDatabase } = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
+const toolRoutes = require('./routes/toolRoutes');
 
 // Criar aplicação Express
 const app = express();
@@ -25,6 +26,7 @@ app.use((req, res, next) => {
 
 // Configurar rotas
 app.use('/api/auth', authRoutes);
+app.use('/api/ferramentas', toolRoutes);
 
 // Rota principal para verificar se o servidor está funcionando
 app.get('/', (req, res) => {
@@ -33,9 +35,9 @@ app.get('/', (req, res) => {
 
 // Rota de teste adicional para frontend verificar a API
 app.get('/api/test', (req, res) => {
-  res.json({ 
-    success: true, 
-    message: 'API do aplicativo está funcionando corretamente com Supabase!' 
+  res.json({
+    success: true,
+    message: 'API do aplicativo está funcionando corretamente com Supabase!'
   });
 });
 
@@ -54,7 +56,7 @@ const startServer = async () => {
   try {
     // Verificar conexão com Supabase
     await setupDatabase();
-    
+
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Servidor rodando na porta ${PORT}`);
       console.log(`Acesse: http://localhost:${PORT}`);

@@ -1,12 +1,15 @@
 import React, { useEffect } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Image, StyleSheet } from 'react-native';
 
 export default function TelaInicial({ navigation }) {
   useEffect(() => {
-    setTimeout(() => {
+    // Apenas aguardar e seguir para a próxima tela
+    const timer = setTimeout(() => {
       navigation.replace('BoasVindas');
-    }, 3000);
-  }, []);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [navigation]);
 
   return (
     <View style={styles.container}>
@@ -21,13 +24,13 @@ export default function TelaInicial({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
-    width: 356,
-    height: 284,
+    width: 200,
+    height: 200,
     resizeMode: 'contain',
   }
 });

@@ -34,6 +34,7 @@ export default function Tabs() {
           tabBarIcon: ({ focused }) => (
             <Ionicons name={focused ? "search" : "search-outline"} size={24} color={focused ? "#7DA38C" : "#fff"} />
           ),
+          unmountOnBlur: true
         }}
       />
       <Tab.Screen

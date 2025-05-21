@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Alert, 
-  ActivityIndicator, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
   TouchableOpacity,
   TextInput,
   KeyboardAvoidingView,
@@ -32,27 +32,27 @@ export default function TelaLeituraCodigoBarras({ navigation }) {
     const timer = setTimeout(() => {
       setShowManualInput(true);
     }, 2000);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
   // Função para validar o código inserido manualmente
   const verificarCodigo = async (codigo) => {
     setLoading(true);
-    
+
     try {
       // Simular uma verificação com o backend
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Verificar se o código está na lista de códigos autorizados
       if (CODIGOS_AUTORIZADOS.includes(codigo)) {
         // Código autorizado, permitir acesso
         Alert.alert('Acesso Autorizado', 'Bem-vindo, Professor!');
-        navigation.replace('AdicionarFerramenta'); // Navegar para a tela de adicionar ferramenta
+        navigation.navigate('AdicionarFerramenta'); // Usar navigate em vez de replace
       } else {
         // Código não autorizado
         Alert.alert(
-          'Acesso Negado', 
+          'Acesso Negado',
           'Somente professores autorizados podem adicionar ferramentas.',
           [{ text: 'OK', onPress: () => setCodigoManual('') }]
         );
@@ -82,13 +82,13 @@ export default function TelaLeituraCodigoBarras({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
       <View style={styles.overlay}>
         <Text style={styles.headerText}>Autenticação de Professor</Text>
-        
+
         {!showManualInput ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#ffffff" />
@@ -107,7 +107,7 @@ export default function TelaLeituraCodigoBarras({ navigation }) {
                 Por favor, use a entrada manual abaixo
               </Text>
             </View>
-            
+
             <TextInput
               style={styles.input}
               placeholder="Digite o código do seu crachá"
@@ -117,21 +117,21 @@ export default function TelaLeituraCodigoBarras({ navigation }) {
               keyboardType="number-pad"
               autoCapitalize="none"
             />
-            
-            <TouchableOpacity 
-              style={styles.submitButton} 
+
+            <TouchableOpacity
+              style={styles.submitButton}
               onPress={handleSubmitCodigo}
               disabled={loading}
             >
               <Text style={styles.submitButtonText}>
                 {loading ? 'Verificando...' : 'Verificar Código'}
               </Text>
-              {loading && <ActivityIndicator color="#fff" style={{marginLeft: 10}} />}
+              {loading && <ActivityIndicator color="#fff" style={{ marginLeft: 10 }} />}
             </TouchableOpacity>
-            
+
             {__DEV__ && (
-              <TouchableOpacity 
-                style={styles.devButton} 
+              <TouchableOpacity
+                style={styles.devButton}
                 onPress={autenticarRapido}
               >
                 <Text style={styles.devButtonText}>
@@ -139,9 +139,9 @@ export default function TelaLeituraCodigoBarras({ navigation }) {
                 </Text>
               </TouchableOpacity>
             )}
-            
-            <TouchableOpacity 
-              style={styles.backButton} 
+
+            <TouchableOpacity
+              style={styles.backButton}
               onPress={() => navigation.goBack()}
             >
               <Text style={styles.backButtonText}>
@@ -150,7 +150,7 @@ export default function TelaLeituraCodigoBarras({ navigation }) {
             </TouchableOpacity>
           </View>
         )}
-        
+
         {loading && !showManualInput && (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color="#ffffff" />

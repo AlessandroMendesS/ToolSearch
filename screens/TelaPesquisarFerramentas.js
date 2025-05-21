@@ -1,16 +1,154 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, SafeAreaView, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Image,
+  SafeAreaView, StatusBar, FlatList, ActivityIndicator
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import supabase from '../api/supabaseClient';
 
+// Grupos de ferramentas com todos os que existem no AdicionarFerramenta.js
 const grupos = [
-  { nome: 'Furadeiras', imagem: require('../assets/img/furadeira.png') },
-  { nome: 'Chaves', imagem: require('../assets/img/chaves.png') },
-  { nome: 'Alicates', imagem: require('../assets/img/alicates.png') },
+  { id: '1', nome: 'Furadeiras', imagem: require('../assets/img/furadeira.png') },
+  { id: '2', nome: 'Chaves', imagem: require('../assets/img/chaves.png') },
+  { id: '3', nome: 'Alicates', imagem: require('../assets/img/alicates.png') },
+  { id: '4', nome: 'Medidores', imagem: null },
+  { id: '5', nome: 'Serras', imagem: null },
+  { id: '6', nome: 'Outros', imagem: null },
 ];
 
 export default function TelaPesquisarFerramentas({ navigation }) {
   const [grupoSelecionado, setGrupoSelecionado] = useState(null);
   const [busca, setBusca] = useState('');
+  const [ferramentas, setFerramentas] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState(null);
+
+  // Buscar todas as ferramentas quando o componente monta
+  useEffect(() => {
+    buscarTodasFerramentas();
+  }, []);
+
+  // Efeito para filtrar quando o grupo é selecionado
+  useEffect(() => {
+    if (grupoSelecionado) {
+      buscarFerramentasPorCategoria(grupoSelecionado.id);
+    }
+  }, [grupoSelecionado]);
+
+  // Função para buscar todas as ferramentas do Supabase
+  const buscarTodasFerramentas = async () => {
+    try {
+      setLoading(true);
+      setErro(null);
+
+      const { data, error } = await supabase
+        .from('ferramentas')
+        .select('*');
+
+      if (error) {
+        console.error('Erro ao buscar ferramentas:', error);
+        setErro('Erro ao buscar ferramentas');
+      } else {
+        console.log('Ferramentas carregadas:', data?.length || 0);
+        setFerramentas(data || []);
+      }
+    } catch (error) {
+      console.error('Erro inesperado:', error);
+      setErro('Erro ao buscar ferramentas');
+      setFerramentas([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para buscar ferramentas por categoria do Supabase
+  const buscarFerramentasPorCategoria = async (categoriaId) => {
+    try {
+      setLoading(true);
+      setErro(null);
+
+      const { data, error } = await supabase
+        .from('ferramentas')
+        .select('*')
+        .eq('categoria_id', categoriaId);
+
+      if (error) {
+        console.error('Erro ao buscar ferramentas por categoria:', error);
+        setErro('Erro ao buscar ferramentas');
+      } else {
+        setFerramentas(data || []);
+
+        if ((data || []).length === 0) {
+          setErro(`Nenhuma ferramenta nesta categoria`);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar ferramentas:', error);
+      setErro('Erro ao buscar ferramentas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para filtrar ferramentas pela busca
+  const ferramentasFiltradas = busca.trim()
+    ? ferramentas.filter(f =>
+      f.nome.toLowerCase().includes(busca.toLowerCase()) ||
+      (f.detalhes && f.detalhes.toLowerCase().includes(busca.toLowerCase())) ||
+      (f.local && f.local.toLowerCase().includes(busca.toLowerCase()))
+    )
+    : ferramentas;
+
+  // Função para selecionar um grupo
+  const selecionarGrupo = (grupo) => {
+    if (grupoSelecionado && grupoSelecionado.id === grupo.id) {
+      setGrupoSelecionado(null);
+      buscarTodasFerramentas();
+    } else {
+      setGrupoSelecionado(grupo);
+    }
+  };
+
+  // Renderizar item da lista de ferramentas
+  const renderFerramentaItem = ({ item }) => (
+    <View style={styles.ferramentaCard}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {item.imagem_url ? (
+          <Image
+            source={{ uri: item.imagem_url }}
+            style={{ width: 60, height: 60, borderRadius: 8 }}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={{
+            width: 60,
+            height: 60,
+            borderRadius: 8,
+            backgroundColor: '#f0f7f0',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            <Ionicons name="construct-outline" size={30} color="#a0c8b0" />
+          </View>
+        )}
+        <View style={{ marginLeft: 10, flex: 1 }}>
+          <Text style={styles.ferramentaNome}>{item.nome}</Text>
+          <Text style={styles.ferramentaLocal}>Local: {item.local}</Text>
+          <Text style={styles.ferramentaPatrimonio}>Patrimônio: {item.patrimonio}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.ferramentaDisponivel}>Disponível:</Text>
+            <View style={{
+              width: 12,
+              height: 12,
+              borderRadius: 6,
+              backgroundColor: item.disponivel ? '#4caf50' : '#f44336',
+              marginLeft: 4
+            }} />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -32,35 +170,59 @@ export default function TelaPesquisarFerramentas({ navigation }) {
       </View>
 
       {/* Cards de categorias */}
-      <View style={styles.cardsContainer}>
-        {grupos.map((grupo) => (
+      <FlatList
+        data={grupos}
+        keyExtractor={(item) => item.id}
+        horizontal={true}
+        contentContainerStyle={{ paddingHorizontal: 10 }}
+        showsHorizontalScrollIndicator={false}
+        renderItem={({ item }) => (
           <TouchableOpacity
-            key={grupo.nome}
-            style={[styles.card, grupoSelecionado === grupo.nome && { borderColor: '#7DA38C', borderWidth: 2 }]}
-            onPress={() => setGrupoSelecionado(grupo.nome)}
+            key={item.id}
+            style={[
+              styles.categoriaCard,
+              grupoSelecionado?.id === item.id && styles.categoriaCardSelecionado
+            ]}
+            onPress={() => selecionarGrupo(item)}
           >
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>{grupo.nome}</Text>
-              <Image source={grupo.imagem} style={styles.cardImage} resizeMode="contain" />
+            <View style={styles.categoriaImagemContainer}>
+              {item.imagem ? (
+                <Image source={item.imagem} style={styles.categoriaImagem} resizeMode="contain" />
+              ) : (
+                <Ionicons name="tools-outline" size={24} color="#2e7d32" />
+              )}
             </View>
+            <Text style={styles.categoriaTexto}>{item.nome}</Text>
           </TouchableOpacity>
-        ))}
-      </View>
+        )}
+        style={{ marginBottom: 20 }}
+      />
 
-      {/* Exemplo visual de resultado (estático) */}
-      {grupoSelecionado && (
-        <View style={styles.ferramentaCard}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ marginLeft: 10 }}>
-              <Text style={styles.ferramentaNome}>Paquímetro</Text>
-              <Text style={styles.ferramentaLocal}>Local: Sala XX</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.ferramentaDisponivel}>Disponível:</Text>
-                <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#4caf50', marginLeft: 4 }} />
-              </View>
-            </View>
-          </View>
+      {/* Lista de ferramentas */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2e7d32" />
+          <Text style={styles.loadingText}>Carregando ferramentas...</Text>
         </View>
+      ) : erro && ferramentasFiltradas.length === 0 ? (
+        <View style={styles.erroContainer}>
+          <Ionicons name="alert-circle" size={40} color="#f44336" />
+          <Text style={styles.erroText}>{erro}</Text>
+        </View>
+      ) : ferramentasFiltradas.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="information-circle" size={40} color="#666" />
+          <Text style={styles.emptyText}>
+            Nenhuma ferramenta encontrada.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={ferramentasFiltradas}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderFerramentaItem}
+          contentContainerStyle={{ paddingBottom: 80 }}
+        />
       )}
     </SafeAreaView>
   );
@@ -99,34 +261,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-  cardsContainer: {
-    paddingHorizontal: 15,
-  },
-  card: {
+  categoriaCard: {
+    alignItems: 'center',
     backgroundColor: 'white',
     borderRadius: 12,
-    marginVertical: 8,
+    marginHorizontal: 6,
     padding: 12,
+    width: 90,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
-  cardContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  categoriaCardSelecionado: {
+    borderColor: '#7DA38C',
+    borderWidth: 2,
+    backgroundColor: '#f0f7f0',
+  },
+  categoriaImagemContainer: {
+    width: 45,
+    height: 45,
+    borderRadius: 25,
+    backgroundColor: '#f0f7f0',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 5,
+    marginBottom: 8,
   },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#004d00',
+  categoriaImagem: {
+    width: 30,
+    height: 30,
   },
-  cardImage: {
-    width: 70,
-    height: 40,
+  categoriaTexto: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#333',
+    textAlign: 'center',
   },
   ferramentaCard: {
     backgroundColor: '#fff',
@@ -152,9 +322,48 @@ const styles = StyleSheet.create({
     color: '#444',
     marginTop: 2,
   },
+  ferramentaPatrimonio: {
+    fontSize: 13,
+    color: '#444',
+    marginTop: 2,
+  },
   ferramentaDisponivel: {
     fontSize: 13,
     color: '#222',
     marginTop: 2,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+  },
+  erroContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  erroText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#f44336',
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    paddingHorizontal: 40,
   },
 });

@@ -10,8 +10,7 @@ const getApiUrl = () => {
     return 'http://localhost:3000/api';
   } else {
     // Use o IP do seu computador na rede para dispositivos físicos
-    // Altere este IP para o correto da sua máquina na rede
-    return 'http://26.110.33.76:3000/api'; // SUBSTITUA ESTE IP PELO IP DO SEU COMPUTADOR
+    return 'http://192.168.1.17:3000/api';
   }
 };
 
@@ -26,7 +25,7 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
   // Aumentar timeout para dar mais tempo para a resposta
-  timeout: 15000 
+  timeout: 30000 // Aumentado para 30 segundos
 });
 
 // Interceptor para adicionar o token às requisições
@@ -58,7 +57,7 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     console.error('Erro na resposta:', error);
-    
+
     // Mensagem mais detalhada para debug
     if (error.response) {
       // O servidor respondeu com um status fora do intervalo 2xx
@@ -71,17 +70,17 @@ apiClient.interceptors.response.use(
       // Erro na configuração da requisição
       console.error('Erro na configuração da requisição:', error.message);
     }
-    
+
     // Verifica se é erro de timeout
     if (error.code === 'ECONNABORTED') {
       console.error('Timeout na requisição - o servidor demorou muito para responder');
     }
-    
+
     // Verifica se é erro de rede
     if (error.message && error.message.includes('Network Error')) {
       console.error('Erro de rede - verifique sua conexão e se o servidor está acessível no IP correto');
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -93,15 +92,15 @@ export const authService = {
     try {
       console.log('Tentando registrar usuário:', userData.nome);
       console.log('URL de registro:', `${API_URL}/auth/register`);
-      
+
       const response = await apiClient.post('/auth/register', userData);
-      
+
       if (response.data.token) {
         // Armazenar token e dados do usuário localmente
         await AsyncStorage.setItem('userToken', response.data.token);
         await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
       }
-      
+
       return response.data;
     } catch (error) {
       console.error('Erro completo no registro:', error);
@@ -112,9 +111,9 @@ export const authService = {
       } else if (error.request) {
         // A requisição foi feita mas não houve resposta
         console.error('Sem resposta do servidor. Detalhes:', error.request._url);
-        return { 
-          success: false, 
-          message: 'Servidor não respondeu. Verifique se o backend está rodando e acessível no IP correto.' 
+        return {
+          success: false,
+          message: 'Servidor não respondeu. Verifique se o backend está rodando e acessível no IP correto.'
         };
       } else {
         // Erro na configuração da requisição
@@ -123,37 +122,37 @@ export const authService = {
       }
     }
   },
-  
+
   // Login de usuário
   login: async (credentials) => {
     try {
       console.log('Tentando login com:', credentials.nome);
       console.log('URL de login:', `${API_URL}/auth/login`);
-      
+
       const response = await apiClient.post('/auth/login', credentials);
-      
+
       if (response.data.token) {
         // Armazenar token e dados do usuário localmente
         await AsyncStorage.setItem('userToken', response.data.token);
         await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
       }
-      
+
       return response.data;
     } catch (error) {
       console.error('Erro completo no login:', error);
       if (error.response) {
         return error.response.data;
       } else if (error.request) {
-        return { 
-          success: false, 
-          message: 'Servidor não respondeu. Verifique se o backend está rodando e acessível no IP correto.' 
+        return {
+          success: false,
+          message: 'Servidor não respondeu. Verifique se o backend está rodando e acessível no IP correto.'
         };
       } else {
         return { success: false, message: 'Erro ao configurar requisição: ' + error.message };
       }
     }
   },
-  
+
   // Logout de usuário
   logout: async () => {
     try {
@@ -165,16 +164,16 @@ export const authService = {
       throw { message: 'Erro ao fazer logout' };
     }
   },
-  
+
   // Verificar se o usuário está autenticado
   checkAuth: async () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
-      
+
       if (!token) {
         return { isAuthenticated: false };
       }
-      
+
       const response = await apiClient.get('/auth/check');
       return { isAuthenticated: true, user: response.data.user };
     } catch (error) {
@@ -184,7 +183,7 @@ export const authService = {
       return { isAuthenticated: false };
     }
   },
-  
+
   // Método de teste para verificar a conexão com o backend
   testConnection: async () => {
     try {
@@ -194,11 +193,11 @@ export const authService = {
     } catch (error) {
       console.error('Erro no teste de conexão:', error);
       let mensagem = 'Erro de conexão';
-      
+
       if (error.request) {
         mensagem = `Servidor não encontrado. Verifique se o backend está rodando no IP correto: ${API_URL}`;
       }
-      
+
       return { success: false, message: mensagem };
     }
   }
