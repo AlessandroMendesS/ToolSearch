@@ -261,9 +261,9 @@ export default function AdicionarFerramenta() {
           <Ionicons name="arrow-back" size={24} color="#2e7d32" />
         </TouchableOpacity>
 
-        <Text style={styles.titulo}>Adicionar Nova Ferramenta</Text>
+      <Text style={styles.titulo}>Adicionar Nova Ferramenta</Text>
 
-        {/* Upload imagem */}
+      {/* Upload imagem */}
         <TouchableOpacity
           style={styles.uploadArea}
           onPress={() => setImagemModalVisivel(true)}
@@ -276,9 +276,9 @@ export default function AdicionarFerramenta() {
               <Text style={styles.uploadText}>Toque para adicionar uma imagem</Text>
             </>
           )}
-        </TouchableOpacity>
+      </TouchableOpacity>
 
-        {/* Formulário */}
+      {/* Formulário */}
         <Text style={styles.label}>Nome da Ferramenta</Text>
         <TextInput
           style={styles.input}
@@ -315,13 +315,13 @@ export default function AdicionarFerramenta() {
         </TouchableOpacity>
 
         <Text style={styles.label}>Detalhes</Text>
-        <TextInput
-          style={[styles.input, styles.inputMultiline]}
+      <TextInput
+        style={[styles.input, styles.inputMultiline]}
           placeholder="Descreva as especificações da ferramenta"
-          value={detalhes}
-          onChangeText={setDetalhes}
-          multiline
-        />
+        value={detalhes}
+        onChangeText={setDetalhes}
+        multiline
+      />
 
         <Text style={styles.label}>Local de Armazenamento</Text>
         <TextInput
@@ -331,7 +331,7 @@ export default function AdicionarFerramenta() {
           onChangeText={setLocal}
         />
 
-        {/* Botão Submit */}
+      {/* Botão Submit */}
         <TouchableOpacity
           style={styles.botaoSubmit}
           onPress={handleSubmit}
@@ -344,7 +344,7 @@ export default function AdicionarFerramenta() {
               Cadastrar Ferramenta
             </Text>
           )}
-        </TouchableOpacity>
+      </TouchableOpacity>
 
         <View style={{ height: 60 }} />
       </ScrollView>
@@ -365,14 +365,14 @@ export default function AdicionarFerramenta() {
                 >
                   <View style={styles.grupoImagemContainer}>
                     {item.imagem ? (
-                      <Image source={item.imagem} style={styles.grupoImagem} />
+                  <Image source={item.imagem} style={styles.grupoImagem} />
                     ) : (
                       <Ionicons name="tools-outline" size={24} color="#2e7d32" />
                     )}
                   </View>
                   <Text style={styles.grupoTexto}>{item.nome}</Text>
                   <Ionicons name="chevron-forward" size={20} color="#2e7d32" />
-                </TouchableOpacity>
+                  </TouchableOpacity>
               )}
             />
 
@@ -445,7 +445,7 @@ export default function AdicionarFerramenta() {
               <ActivityIndicator size="large" color="#2e7d32" />
               <Text style={styles.qrCodeModalText}>Gerando QR Code...</Text>
             </View>
-          </View>
+    </View>
         </Modal>
       )}
     </KeyboardAvoidingView>
