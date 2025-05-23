@@ -1,3 +1,4 @@
+import 'react-native-url-polyfill/auto';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -10,6 +11,7 @@ import TelaTemas from './screens/TelaTemas';
 import TelaLinguagens from './screens/TelaLinguagens';
 import { AuthProvider } from './context/AuthContext';
 import AdicionarFerramenta from './screens/AdicionarFerramenta';
+import DetalheFerramenta from './screens/DetalheFerramenta';
 
 const Stack = createNativeStackNavigator();
 
@@ -27,6 +29,7 @@ export default function App() {
           <Stack.Screen name="AdicionarFerramenta" component={AdicionarFerramenta} />
           {/* Quando o usuário logar, ele é redirecionado para as tabs */}
           <Stack.Screen name="Tabs" component={Tabs} />
+        <Stack.Screen name="DetalheFerramenta" component={DetalheFerramenta} />
         </Stack.Navigator>
       </NavigationContainer>
     </AuthProvider>

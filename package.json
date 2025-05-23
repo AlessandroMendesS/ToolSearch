@@ -15,7 +15,7 @@
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/native": "^7.1.6",
     "@react-navigation/native-stack": "^7.3.10",
-    "@supabase/supabase-js": "^2.41.3",
+    "@supabase/supabase-js": "^2.38.0",
     "axios": "^1.9.0",
     "expo": "^53.0.0",
     "expo-camera": "~16.1.6",
@@ -33,13 +33,23 @@
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.10.0",
     "react-native-svg": "15.11.2",
+    "react-native-url-polyfill": "^2.0.0",
     "react-native-vector-icons": "^10.2.0",
-    "react-native-web": "^0.20.0"
+    "react-native-web": "^0.20.0",
+    "stream-browserify": "^3.0.0",
+    "text-encoding": "^0.7.0"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@react-native-community/cli": "^18.0.0",
+    "@types/ws": "^8.18.1",
     "nodemon": "^3.1.10"
+  },
+  "resolutions": {
+    "ws": "8.17.1"
+  },
+  "overrides": {
+    "ws": "8.17.1"
   },
   "private": true
 }

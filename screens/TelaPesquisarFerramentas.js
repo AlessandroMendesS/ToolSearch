@@ -111,7 +111,11 @@ export default function TelaPesquisarFerramentas({ navigation }) {
 
   // Renderizar item da lista de ferramentas
   const renderFerramentaItem = ({ item }) => (
-    <View style={styles.ferramentaCard}>
+    <TouchableOpacity
+      style={styles.ferramentaCard}
+      activeOpacity={0.8}
+      onPress={() => navigation.navigate('DetalheFerramenta', { ferramenta: item })}
+    >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         {item.imagem_url ? (
           <Image
@@ -128,10 +132,10 @@ export default function TelaPesquisarFerramentas({ navigation }) {
             justifyContent: 'center',
             alignItems: 'center'
           }}>
-            <Ionicons name="construct-outline" size={30} color="#a0c8b0" />
+            <Ionicons name="construct-outline" size={34} color="#B3DBC5" />
           </View>
         )}
-        <View style={{ marginLeft: 10, flex: 1 }}>
+        <View style={{ marginLeft: 12, flex: 1 }}>
           <Text style={styles.ferramentaNome}>{item.nome}</Text>
           <Text style={styles.ferramentaLocal}>Local: {item.local}</Text>
           <Text style={styles.ferramentaPatrimonio}>Patrimônio: {item.patrimonio}</Text>
@@ -147,7 +151,7 @@ export default function TelaPesquisarFerramentas({ navigation }) {
           </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
