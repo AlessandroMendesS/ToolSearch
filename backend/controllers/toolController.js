@@ -169,11 +169,49 @@ const updateQrCode = async (req, res) => {
     }
 };
 
+// Definir a função getMostUsedTools AQUI
+const getMostUsedTools = async (req, res) => {
+    try {
+        const { data: toolsData, error: toolsError } = await supabase
+            .from('ferramentas')
+            .select(`
+                id,
+                nome,
+                imagem_url,
+                disponivel,
+                local,
+                detalhes,
+                patrimonio,
+                emprestimos ( count )
+            `);
+
+        if (toolsError) {
+            console.error('Supabase error fetching tools for most used:', toolsError);
+            throw toolsError;
+        }
+
+        const toolsWithLoanCounts = toolsData.map(tool => ({
+            ...tool,
+            loan_count: tool.emprestimos && tool.emprestimos.length > 0 ? tool.emprestimos[0].count : 0,
+        })).sort((a, b) => b.loan_count - a.loan_count);
+
+        // Limit to a certain number, e.g., top 6, or send all and let frontend decide
+        const topTools = toolsWithLoanCounts.slice(0, 6); // Get top 6 most used tools
+
+        res.json({ success: true, tools: topTools });
+
+    } catch (err) {
+        console.error('Error in getMostUsedTools controller:', err);
+        res.status(500).json({ success: false, message: 'Erro ao buscar ferramentas mais utilizadas: ' + (err.message || 'Erro desconhecido') });
+    }
+};
+
 module.exports = {
     createTool,
     getAllTools,
     getToolsByCategory,
     getToolById,
     uploadImage,
-    updateQrCode
+    updateQrCode,
+    getMostUsedTools
 }; 

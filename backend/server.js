@@ -3,6 +3,7 @@ const cors = require('cors');
 const { setupDatabase } = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const toolRoutes = require('./routes/toolRoutes');
+const emprestimoRoutes = require('./routes/emprestimoRoutes');
 
 // Criar aplicação Express
 const app = express();
@@ -27,6 +28,7 @@ app.use((req, res, next) => {
 // Configurar rotas
 app.use('/api/auth', authRoutes);
 app.use('/api/ferramentas', toolRoutes);
+app.use('/api/emprestimos', emprestimoRoutes);
 
 // Rota principal para verificar se o servidor está funcionando
 app.get('/', (req, res) => {

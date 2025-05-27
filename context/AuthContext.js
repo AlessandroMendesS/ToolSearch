@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
       try {
         // Verificar se existe um token armazenado
         const userDataString = await AsyncStorage.getItem('userData');
-        
+
         if (userDataString) {
           const userData = JSON.parse(userDataString);
           setUser(userData);
@@ -38,37 +38,37 @@ export const AuthProvider = ({ children }) => {
   // Função para fazer login
   // Atualize a função login no AuthContext.js para incluir melhor tratamento de erros
 
-const login = async (credentials) => {
-  try {
-    console.log('Tentando login com:', credentials.nome);
-    const response = await authService.login(credentials);
-    
-    if (response.success) {
-      console.log('Login bem-sucedido:', response.user);
-      setUser(response.user);
-      setAuthenticated(true);
-      
-      // Salvar dados do usuário no AsyncStorage
-      await AsyncStorage.setItem('userData', JSON.stringify(response.user));
-      return { success: true };
-    } else {
-      console.warn('Falha no login:', response.message);
-      return { success: false, message: response.message };
+  const login = async (credentials) => {
+    try {
+      console.log('Tentando login com:', credentials.nome);
+      const response = await authService.login(credentials);
+
+      if (response.success) {
+        console.log('Login bem-sucedido:', response.user);
+        setUser(response.user);
+        setAuthenticated(true);
+
+        // Salvar dados do usuário no AsyncStorage
+        await AsyncStorage.setItem('userData', JSON.stringify(response.user));
+        return { success: true };
+      } else {
+        console.warn('Falha no login:', response.message);
+        return { success: false, message: response.message };
+      }
+    } catch (error) {
+      console.error('Erro durante login:', error);
+      return {
+        success: false,
+        message: error.message || 'Erro ao conectar com o servidor'
+      };
     }
-  } catch (error) {
-    console.error('Erro durante login:', error);
-    return { 
-      success: false, 
-      message: error.message || 'Erro ao conectar com o servidor'
-    };
-  }
-};
+  };
 
   // Função para fazer registro
   const register = async (userData) => {
     try {
       const response = await authService.register(userData);
-      
+
       if (response.success) {
         setUser(response.user);
         setAuthenticated(true);
@@ -98,18 +98,31 @@ const login = async (credentials) => {
     try {
       const result = await authService.checkAuth();
       setAuthenticated(result.isAuthenticated);
-      
+
       if (result.isAuthenticated) {
         setUser(result.user);
       } else {
         setUser(null);
       }
-      
+
       return result;
     } catch (error) {
       setAuthenticated(false);
       setUser(null);
       return { isAuthenticated: false };
+    }
+  };
+
+  // Função para atualizar a imagem do perfil do usuário
+  const updateUserImage = async (newImageUrl) => {
+    if (user) {
+      const updatedUser = { ...user, imagemPerfil: newImageUrl };
+      setUser(updatedUser);
+      try {
+        await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+      } catch (error) {
+        console.error("Erro ao salvar imagem do perfil no AsyncStorage:", error);
+      }
     }
   };
 
@@ -121,7 +134,8 @@ const login = async (credentials) => {
     login,
     register,
     logout,
-    checkAuth
+    checkAuth,
+    updateUserImage
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -130,10 +144,10 @@ const login = async (credentials) => {
 // Hook personalizado para usar o contexto
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  
+
   if (!context) {
     throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
-  
+
   return context;
 };

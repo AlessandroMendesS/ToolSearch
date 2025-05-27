@@ -10,7 +10,7 @@ const getApiUrl = () => {
     return 'http://localhost:3000/api';
   } else {
     // Use o IP do seu computador na rede para dispositivos físicos
-    return 'https://1824-2804-2894-c100-62da-bcb5-d243-3c01-c5a2.ngrok-free.app/api';
+    return ' https://2e66-2804-2894-c100-62da-c939-df26-eac1-605e.ngrok-free.app/api';
   }
 };
 
@@ -201,6 +201,35 @@ export const authService = {
       return { success: false, message: mensagem };
     }
   }
+};
+
+export const emprestimoService = {
+  registrarEmprestimo: async ({ ferramenta_id, usuario_id, local_emprestimo }) => {
+    const response = await apiClient.post('/emprestimos', {
+      ferramenta_id,
+      usuario_id,
+      local_emprestimo
+    });
+    return response.data;
+  },
+  registrarDevolucao: async ({ emprestimo_id, local_devolucao }) => {
+    const response = await apiClient.put(`/emprestimos/${emprestimo_id}/devolucao`, {
+      local_devolucao
+    });
+    return response.data;
+  },
+  buscarEmprestimoAberto: async (ferramenta_id) => {
+    const response = await apiClient.get(`/emprestimos/aberto/${ferramenta_id}`);
+    return response.data;
+  }
+};
+
+export const toolService = {
+  getMostUsedTools: async () => {
+    const response = await apiClient.get('/ferramentas/mais-utilizadas');
+    return response.data;
+  },
+  // ... outras funções do toolService se houver
 };
 
 export default apiClient;

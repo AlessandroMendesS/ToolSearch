@@ -4,6 +4,9 @@ const router = express.Router();
 const toolController = require('../controllers/toolController');
 const { verificarToken } = require('../middleware/authMiddleware');
 
+// Rota para obter ferramentas mais utilizadas
+router.get('/mais-utilizadas', toolController.getMostUsedTools);
+
 // Rota para cadastrar nova ferramenta (sem autenticação durante desenvolvimento)
 router.post('/', toolController.createTool);
 

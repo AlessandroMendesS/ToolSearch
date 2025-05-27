@@ -1,649 +1,427 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image, TextInput, Modal, FlatList, Alert,
-  ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform
+  ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import supabase from '../api/supabaseClient';
 
-const grupos = [
-  { id: '1', nome: 'Furadeiras', imagem: require('../assets/img/furadeira.png') },
-  { id: '2', nome: 'Chaves', imagem: require('../assets/img/chaves.png') },
-  { id: '3', nome: 'Alicates', imagem: require('../assets/img/alicates.png') },
-  { id: '4', nome: 'Medidores', imagem: null },
-  { id: '5', nome: 'Serras', imagem: null },
-  { id: '6', nome: 'Outros', imagem: null },
+const categoriasLista = [
+  { id: '1', nome: 'Furadeiras', icone: 'build-outline' },
+  { id: '2', nome: 'Chaves', icone: 'key-outline' },
+  { id: '3', nome: 'Alicates', icone: 'cut-outline' },
+  { id: '4', nome: 'Medidores', icone: 'speedometer-outline' },
+  { id: '5', nome: 'Serras', icone: 'construct-outline' },
+  { id: '6', nome: 'Outros', icone: 'ellipsis-horizontal-circle-outline' },
 ];
 
 export default function AdicionarFerramenta() {
   const navigation = useNavigation();
   const { user } = useAuth();
 
-  const [modalVisivel, setModalVisivel] = useState(false);
   const [imagem, setImagem] = useState(null);
   const [nome, setNome] = useState('');
   const [detalhes, setDetalhes] = useState('');
   const [local, setLocal] = useState('');
   const [patrimonio, setPatrimonio] = useState('');
-  const [categoria, setCategoria] = useState(null);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [qrCodePreview, setQrCodePreview] = useState(null);
-  const [cameraPermission, setCameraPermission] = useState(null);
-  const [galleryPermission, setGalleryPermission] = useState(null);
 
-  // Solicitar permissões ao carregar o componente
+  const [categoriaModalVisivel, setCategoriaModalVisivel] = useState(false);
+  const [imagemModalVisivel, setImagemModalVisivel] = useState(false);
+
   useEffect(() => {
     (async () => {
-      const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
-      setCameraPermission(cameraStatus.status === 'granted');
-
-      const galleryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      setGalleryPermission(galleryStatus.status === 'granted');
+      if (Platform.OS !== 'web') {
+        const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
+        const galleryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (cameraStatus.status !== 'granted' || galleryStatus.status !== 'granted') {
+          Alert.alert('Permissão Necessária', 'Precisamos de acesso à câmera e galeria para fotos.');
+        }
+      }
     })();
   }, []);
 
-  // Função para selecionar imagem da câmera
   const tirarFoto = async () => {
-    if (!cameraPermission) {
-      Alert.alert(
-        'Permissão necessária',
-        'Precisamos da permissão da câmera para continuar.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
+    setImagemModalVisivel(false);
     let result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.7,
     });
-
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setImagem(result.assets[0].uri);
     }
   };
 
-  // Função para selecionar imagem da galeria
-  const escolherImagem = async () => {
-    if (!galleryPermission) {
-      Alert.alert(
-        'Permissão necessária',
-        'Precisamos da permissão da galeria para continuar.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
+  const escolherDaGaleria = async () => {
+    setImagemModalVisivel(false);
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.7,
     });
-
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setImagem(result.assets[0].uri);
     }
   };
 
-  // Modal para escolha da fonte da imagem
-  const [imagemModalVisivel, setImagemModalVisivel] = useState(false);
-
-  // Função para gerar um QR Code simulado
-  const gerarQRCode = () => {
-    setQrCodePreview(true);
-
-    // ID único para o QR code baseado em timestamp
-    const qrCodeId = `qrcode-${Date.now()}`;
-
-    // Mostrar por 3 segundos e depois fechar
-    setTimeout(() => {
-      setQrCodePreview(false);
-      Alert.alert(
-        'QR Code gerado',
-        `Um QR code único foi gerado para esta ferramenta.\n\nID: ${qrCodeId}\n\nEste ID pode ser usado para rastrear a ferramenta posteriormente.`,
-        [{ text: 'OK' }]
-      );
-    }, 2000);
-
-    return qrCodeId;
-  };
-
-  // Função para validar o formulário
   const validarFormulario = () => {
-    if (!nome.trim()) {
-      Alert.alert('Erro', 'Por favor, informe o nome da ferramenta');
-      return false;
-    }
-
-    if (!patrimonio.trim()) {
-      Alert.alert('Erro', 'Por favor, informe o número de patrimônio');
-      return false;
-    }
-
-    if (!local.trim()) {
-      Alert.alert('Erro', 'Por favor, informe o local da ferramenta');
-      return false;
-    }
-
-    if (!categoria) {
-      Alert.alert('Erro', 'Por favor, selecione uma categoria');
-      return false;
-    }
-
+    if (!nome.trim()) { Alert.alert('Campo Obrigatório', 'Por favor, insira o nome da ferramenta.'); return false; }
+    if (!patrimonio.trim()) { Alert.alert('Campo Obrigatório', 'Insira o número de patrimônio.'); return false; }
+    if (!local.trim()) { Alert.alert('Campo Obrigatório', 'Insira o local de armazenamento.'); return false; }
+    if (!categoriaSelecionada) { Alert.alert('Campo Obrigatório', 'Selecione uma categoria.'); return false; }
+    if (!imagem) { Alert.alert('Campo Obrigatório', 'Adicione uma imagem para a ferramenta.'); return false; }
     return true;
   };
 
-  // Função para salvar a ferramenta no Supabase
-  const salvarFerramenta = async (ferramenta) => {
-    try {
-      console.log('Tentando salvar ferramenta no Supabase');
-
-      // Construir objeto para inserção
-      const novaTool = {
-        nome: ferramenta.nome,
-        patrimonio: ferramenta.patrimonio,
-        detalhes: ferramenta.detalhes || '',
-        local: ferramenta.local,
-        categoria_id: ferramenta.categoria_id,
-        categoria_nome: ferramenta.categoria_nome,
-        imagem_url: ferramenta.imagem_url || null,
-        qrcode_url: ferramenta.qrcode_url,
-        disponivel: true,
-        adicionado_por: 1 // ID fixo para desenvolvimento
-      };
-
-      // Inserir no Supabase
-      const { data, error } = await supabase
-        .from('ferramentas')
-        .insert([novaTool]);
-
-      // Verificar erro
-      if (error) {
-        console.error('Erro ao salvar ferramenta:', error);
-        Alert.alert('Erro', 'Não foi possível salvar a ferramenta: ' + error.message);
-        return false;
-      }
-
-      console.log('Ferramenta salva com sucesso!');
-      return true;
-    } catch (error) {
-      console.error('Erro inesperado:', error);
-      Alert.alert('Erro', 'Ocorreu um erro inesperado ao salvar.');
-      return false;
-    }
+  const handleVoltarParaHome = () => {
+    navigation.navigate('Home');
   };
 
-  // Função para lidar com a submissão do formulário
   const handleSubmit = async () => {
     if (!validarFormulario()) return;
+    setLoading(true);
+    // Lógica de upload da imagem para o Supabase Storage e depois salvar a ferramenta
+    // Esta parte precisa ser implementada: upload da imagem e obtenção da URL pública
+    const imagemNomeUnico = `public/ferramentas/${Date.now()}_${nome.replace(/\s+/g, '_')}.jpg`;
+    let imagemUrlSupabase = null;
+
+    if (imagem) {
+      try {
+        const response = await fetch(imagem);
+        const blob = await response.blob();
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('ferramentas-imagens') // Nome do seu bucket no Supabase Storage
+          .upload(imagemNomeUnico, blob, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: blob.type
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = supabase.storage
+          .from('ferramentas-imagens')
+          .getPublicUrl(uploadData.path);
+        imagemUrlSupabase = publicUrlData.publicUrl;
+
+      } catch (error) {
+        console.error("Erro no upload da imagem:", error);
+        Alert.alert('Erro no Upload', 'Não foi possível fazer o upload da imagem: ' + error.message);
+        setLoading(false);
+        return;
+      }
+    }
+
+    const novaFerramenta = {
+      nome,
+      patrimonio,
+      detalhes,
+      local,
+      categoria_id: categoriaSelecionada.id,
+      // categoria_nome: categoriaSelecionada.nome, // Pode ser útil, mas categoria_id é o principal
+      imagem_url: imagemUrlSupabase,
+      qrcode_url: `tool-${patrimonio}-${Date.now()}`, // Exemplo de QR Code
+      disponivel: true,
+      adicionado_por: user?.id || 1, // Usar user.id se disponível, senão fallback
+    };
 
     try {
-      setLoading(true);
+      const { data, error } = await supabase.from('ferramentas').insert([novaFerramenta]).select();
+      if (error) throw error;
 
-      // Gerar um QR Code
-      const qrCodeId = gerarQRCode();
-
-      // Criar objeto da ferramenta
-      const novaFerramenta = {
-        nome,
-        detalhes,
-        local,
-        patrimonio,
-        categoria_id: categoria.id,
-        categoria_nome: categoria.nome,
-        imagem_url: imagem,
-        qrcode_url: qrCodeId,
-        disponivel: true,
-        data_criacao: new Date().toISOString()
-      };
-
-      // Salvar no Supabase
-      const sucesso = await salvarFerramenta(novaFerramenta);
-
-      if (sucesso) {
-        setLoading(false);
-        Alert.alert(
-          'Sucesso',
-          'Ferramenta cadastrada com sucesso no Supabase!',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                resetForm();
-                navigation.navigate('Início');
-              }
-            }
-          ]
-        );
-      } else {
-        setLoading(false);
-        Alert.alert('Erro', 'Erro ao cadastrar ferramenta. Tente novamente.');
-      }
+      Alert.alert('Sucesso!', 'Ferramenta cadastrada com sucesso.', [
+        { text: 'OK', onPress: handleVoltarParaHome }
+      ]);
+      // Limpar formulário se necessário
+      setImagem(null); setNome(''); setPatrimonio(''); setDetalhes(''); setLocal(''); setCategoriaSelecionada(null);
     } catch (error) {
+      console.error("Erro ao salvar ferramenta no DB:", error);
+      Alert.alert('Erro ao Salvar', 'Não foi possível salvar a ferramenta no banco de dados: ' + error.message);
+    } finally {
       setLoading(false);
-      console.error("Erro ao cadastrar ferramenta:", error);
-      Alert.alert('Erro', 'Erro ao cadastrar ferramenta. Tente novamente.');
     }
   };
 
-  // Função para selecionar categoria
-  const selecionarCategoria = (grupo) => {
-    setCategoria(grupo);
-    setModalVisivel(false);
-  };
-
-  // Função para resetar o formulário
-  const resetForm = () => {
-    setNome('');
-    setDetalhes('');
-    setLocal('');
-    setPatrimonio('');
-    setCategoria(null);
-    setImagem(null);
-  };
+  const InputField = ({ icon, placeholder, value, onChangeText, keyboardType = 'default', multiline = false, numberOfLines = 1 }) => (
+    <View style={styles.inputContainer}>
+      <Ionicons name={icon} size={22} color="#7DA38C" style={styles.inputIcon} />
+      <TextInput
+        style={styles.input}
+        placeholder={placeholder}
+        placeholderTextColor="#A0AEC0"
+        value={value}
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+        multiline={multiline}
+        numberOfLines={numberOfLines}
+        textAlignVertical={multiline ? 'top' : 'center'}
+      />
+    </View>
+  );
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1 }}
-    >
-      <ScrollView style={styles.container}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#2e7d32" />
-        </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F7FAFC" />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={handleVoltarParaHome} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={28} color="#38A169" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Nova Ferramenta</Text>
+          </View>
 
-      <Text style={styles.titulo}>Adicionar Nova Ferramenta</Text>
+          <TouchableOpacity style={styles.imagePicker} onPress={() => setImagemModalVisivel(true)}>
+            {imagem ? (
+              <Image source={{ uri: imagem }} style={styles.imagePreview} />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Ionicons name="camera-outline" size={40} color="#7DA38C" />
+                <Text style={styles.imagePickerText}>Adicionar Foto</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
-      {/* Upload imagem */}
-        <TouchableOpacity
-          style={styles.uploadArea}
-          onPress={() => setImagemModalVisivel(true)}
-        >
-          {imagem ? (
-            <Image source={{ uri: imagem }} style={styles.imagemPreview} />
-          ) : (
-            <>
-              <Ionicons name="camera-outline" size={48} color="#a0c8b0" />
-              <Text style={styles.uploadText}>Toque para adicionar uma imagem</Text>
-            </>
-          )}
-      </TouchableOpacity>
+          <InputField icon="hammer-outline" placeholder="Nome da Ferramenta" value={nome} onChangeText={setNome} />
+          <InputField icon="document-text-outline" placeholder="Nº de Patrimônio" value={patrimonio} onChangeText={setPatrimonio} keyboardType="numeric" />
 
-      {/* Formulário */}
-        <Text style={styles.label}>Nome da Ferramenta</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex: Furadeira Elétrica Bosch"
-          value={nome}
-          onChangeText={setNome}
-        />
-
-        <Text style={styles.label}>Número de Patrimônio</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex: 10234"
-          value={patrimonio}
-          onChangeText={setPatrimonio}
-          keyboardType="number-pad"
-        />
-
-        <Text style={styles.label}>Categoria</Text>
-        <TouchableOpacity
-          style={styles.categoriaSelector}
-          onPress={() => setModalVisivel(true)}
-        >
-          {categoria ? (
-            <View style={styles.categoriaSelected}>
-              {categoria.imagem && (
-                <Image source={categoria.imagem} style={styles.categoriaImagem} />
-              )}
-              <Text style={styles.categoriaText}>{categoria.nome}</Text>
-            </View>
-          ) : (
-            <Text style={styles.placeholderText}>Selecione uma categoria</Text>
-          )}
-          <Ionicons name="chevron-down" size={20} color="#666" />
-        </TouchableOpacity>
-
-        <Text style={styles.label}>Detalhes</Text>
-      <TextInput
-        style={[styles.input, styles.inputMultiline]}
-          placeholder="Descreva as especificações da ferramenta"
-        value={detalhes}
-        onChangeText={setDetalhes}
-        multiline
-      />
-
-        <Text style={styles.label}>Local de Armazenamento</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex: Estoque Principal / Almoxarifado"
-          value={local}
-          onChangeText={setLocal}
-        />
-
-      {/* Botão Submit */}
-        <TouchableOpacity
-          style={styles.botaoSubmit}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.botaoSubmitText}>
-              Cadastrar Ferramenta
+          <TouchableOpacity style={styles.inputContainer} onPress={() => setCategoriaModalVisivel(true)}>
+            <Ionicons name="layers-outline" size={22} color="#7DA38C" style={styles.inputIcon} />
+            <Text style={[styles.input, categoriaSelecionada ? {} : { color: '#A0AEC0' }]}>
+              {categoriaSelecionada ? categoriaSelecionada.nome : 'Selecionar Categoria'}
             </Text>
-          )}
-      </TouchableOpacity>
+            <Ionicons name="chevron-down" size={22} color="#7DA38C" />
+          </TouchableOpacity>
 
-        <View style={{ height: 60 }} />
-      </ScrollView>
+          <InputField icon="information-circle-outline" placeholder="Detalhes (opcional)" value={detalhes} onChangeText={setDetalhes} multiline numberOfLines={3} />
+          <InputField icon="location-outline" placeholder="Local de Armazenamento" value={local} onChangeText={setLocal} />
 
-      {/* Modal de escolha de categoria */}
-      <Modal visible={modalVisivel} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
+          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.submitButtonText}>Salvar Ferramenta</Text>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* Modal para escolher Categoria */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={categoriaModalVisivel}
+        onRequestClose={() => setCategoriaModalVisivel(false)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPressOut={() => setCategoriaModalVisivel(false)}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Selecione uma categoria</Text>
-
+            <Text style={styles.modalTitle}>Selecione a Categoria</Text>
             <FlatList
-              data={grupos}
+              data={categoriasLista}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={styles.grupoItem}
-                  onPress={() => selecionarCategoria(item)}
+                  style={styles.modalItem}
+                  onPress={() => { setCategoriaSelecionada(item); setCategoriaModalVisivel(false); }}
                 >
-                  <View style={styles.grupoImagemContainer}>
-                    {item.imagem ? (
-                  <Image source={item.imagem} style={styles.grupoImagem} />
-                    ) : (
-                      <Ionicons name="tools-outline" size={24} color="#2e7d32" />
-                    )}
-                  </View>
-                  <Text style={styles.grupoTexto}>{item.nome}</Text>
-                  <Ionicons name="chevron-forward" size={20} color="#2e7d32" />
-                  </TouchableOpacity>
+                  <Ionicons name={item.icone} size={24} color="#38A169" style={{ marginRight: 15 }} />
+                  <Text style={styles.modalItemText}>{item.nome}</Text>
+                </TouchableOpacity>
               )}
             />
-
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setModalVisivel(false)}
-            >
-              <Text style={styles.modalCloseText}>Cancelar</Text>
+            <TouchableOpacity style={styles.modalCloseButton} onPress={() => setCategoriaModalVisivel(false)}>
+              <Text style={styles.modalCloseButtonText}>Fechar</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
 
-      {/* Modal de escolha da origem da imagem */}
-      <Modal visible={imagemModalVisivel} animationType="fade" transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Adicionar imagem</Text>
-
-            <TouchableOpacity
-              style={styles.imagemOption}
-              onPress={() => {
-                setImagemModalVisivel(false);
-                setTimeout(() => tirarFoto(), 300);
-              }}
-            >
-              <Ionicons name="camera" size={24} color="#2e7d32" />
-              <Text style={styles.imagemOptionText}>Tirar foto</Text>
+      {/* Modal para escolher Imagem */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={imagemModalVisivel}
+        onRequestClose={() => setImagemModalVisivel(false)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPressOut={() => setImagemModalVisivel(false)}>
+          <View style={[styles.modalContent, styles.imageModalContent]}>
+            <Text style={styles.modalTitle}>Adicionar Foto</Text>
+            <TouchableOpacity style={styles.imageOptionButton} onPress={tirarFoto}>
+              <Ionicons name="camera-outline" size={24} color="#38A169" />
+              <Text style={styles.imageOptionText}>Tirar Foto</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.imagemOption}
-              onPress={() => {
-                setImagemModalVisivel(false);
-                setTimeout(() => escolherImagem(), 300);
-              }}
-            >
-              <Ionicons name="images" size={24} color="#2e7d32" />
-              <Text style={styles.imagemOptionText}>Escolher da galeria</Text>
+            <TouchableOpacity style={styles.imageOptionButton} onPress={escolherDaGaleria}>
+              <Ionicons name="image-outline" size={24} color="#38A169" />
+              <Text style={styles.imageOptionText}>Escolher da Galeria</Text>
             </TouchableOpacity>
-
-            {imagem && (
-              <TouchableOpacity
-                style={[styles.imagemOption, styles.removerImagem]}
-                onPress={() => {
-                  setImagem(null);
-                  setImagemModalVisivel(false);
-                }}
-              >
-                <Ionicons name="trash" size={24} color="#e53935" />
-                <Text style={[styles.imagemOptionText, { color: '#e53935' }]}>Remover imagem</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setImagemModalVisivel(false)}
-            >
-              <Text style={styles.modalCloseText}>Cancelar</Text>
+            <TouchableOpacity style={styles.modalCloseButton} onPress={() => setImagemModalVisivel(false)}>
+              <Text style={styles.modalCloseButtonText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
 
-      {/* Modal de preview do QR code */}
-      {qrCodePreview && (
-        <Modal visible={true} animationType="fade" transparent>
-          <View style={styles.qrCodeModalContainer}>
-            <View style={styles.qrCodeModalContent}>
-              <ActivityIndicator size="large" color="#2e7d32" />
-              <Text style={styles.qrCodeModalText}>Gerando QR Code...</Text>
-            </View>
-    </View>
-        </Modal>
-      )}
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
-    paddingTop: 60,
+    backgroundColor: '#F7FAFC',
+  },
+  container: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    marginBottom: 10,
   },
   backButton: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    zIndex: 10,
+    padding: 5, // Aumentar área de toque
   },
-  titulo: {
-    fontSize: 24,
+  headerTitle: {
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 30,
-    color: '#2e7d32',
-    textAlign: 'center',
+    color: '#2D3748',
+    marginLeft: 15,
   },
-  label: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  uploadArea: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 30,
-    backgroundColor: '#f0f7f0',
-    padding: 30,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#a0c8b0',
-    borderStyle: 'dashed',
+  imagePicker: {
     height: 180,
+    backgroundColor: '#E8F5E9', // Verde bem claro
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 25,
+    borderWidth: 2,
+    borderColor: '#C8E6C9',
+    borderStyle: 'dashed',
   },
-  uploadText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#888'
-  },
-  imagemPreview: {
+  imagePreview: {
     width: '100%',
     height: '100%',
-    borderRadius: 8,
-    resizeMode: 'cover',
+    borderRadius: 10, // Um pouco menos que o container para não cortar bordas
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    marginBottom: 20,
-    backgroundColor: '#f9f9f9',
-  },
-  inputMultiline: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  categoriaSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    marginBottom: 20,
-    backgroundColor: '#f9f9f9',
-  },
-  categoriaSelected: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  categoriaImagem: {
-    width: 24,
-    height: 24,
-    marginRight: 10,
-  },
-  categoriaText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  placeholderText: {
-    fontSize: 16,
-    color: '#999',
-  },
-  botaoSubmit: {
-    backgroundColor: '#2e7d32',
-    borderRadius: 8,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  botaoSubmitText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+  imagePlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
   },
+  imagePickerText: {
+    marginTop: 8,
+    color: '#38A169',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    minHeight: 55, // Altura mínima
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: '#2D3748',
+    paddingVertical: 12, // Ajustar padding interno
+  },
+  submitButton: {
+    backgroundColor: '#38A169', // Verde principal
+    borderRadius: 10,
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginTop: 15,
+    shadowColor: "#2F855A",
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.27,
+    shadowRadius: 4.65,
+    elevation: 6,
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  // Estilos do Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'flex-end', // Alinha o modal na parte inferior
+  },
   modalContent: {
-    width: '85%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    maxHeight: '70%',
+    backgroundColor: '#FFFFFF',
+    paddingTop: 20,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20, // Padding inferior para safe area no iOS
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '60%', // Limita a altura do modal
+  },
+  imageModalContent: {
+    maxHeight: '40%',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 20,
+    color: '#2D3748',
     textAlign: 'center',
-    color: '#2e7d32',
+    marginBottom: 20,
   },
-  grupoItem: {
+  modalItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#F0F0F0',
   },
-  grupoImagemContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f0f7f0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  grupoImagem: {
-    width: 30,
-    height: 30,
-    resizeMode: 'contain',
-  },
-  grupoTexto: {
-    flex: 1,
+  modalItemText: {
     fontSize: 16,
     color: '#333',
   },
-  modalCloseButton: {
-    marginTop: 20,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  modalCloseText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  imagemOption: {
+  imageOptionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
+    paddingVertical: 18,
+    paddingHorizontal: 25,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#F0F0F0',
   },
-  imagemOptionText: {
-    fontSize: 16,
+  imageOptionText: {
+    fontSize: 17,
     color: '#333',
     marginLeft: 15,
   },
-  removerImagem: {
+  modalCloseButton: {
     marginTop: 10,
-  },
-  qrCodeModalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
+    padding: 15,
     alignItems: 'center',
   },
-  qrCodeModalContent: {
-    backgroundColor: '#fff',
-    padding: 30,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  qrCodeModalText: {
+  modalCloseButtonText: {
     fontSize: 16,
-    marginTop: 20,
-    color: '#333',
-  },
+    color: '#E53E3E', // Vermelho para fechar/cancelar
+    fontWeight: '500',
+  }
 });

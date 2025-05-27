@@ -1,15 +1,18 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+// import { createStackNavigator } from '@react-navigation/stack'; // Removido
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TelaInicial from './screens/Home';
 import TelaPerfil from './screens/Perfil';
 import TelaLeituraCodigoBarras from './screens/TelaLeituraCodigoBarras';
 import TelaPesquisarFerramentas from './screens/TelaPesquisarFerramentas';
+// import TelaScannerEmprestimo from './screens/TelaScannerEmprestimo'; // Removido
 
 const Tab = createBottomTabNavigator();
+// const Stack = createStackNavigator(); // Removido
 
-export default function Tabs() {
+export default function Tabs() { // Nome original restaurado
   return (
     <Tab.Navigator
       screenOptions={{
@@ -58,6 +61,8 @@ export default function Tabs() {
     </Tab.Navigator>
   );
 }
+
+// Stack Navigator Principal removido
 
 const estilos = StyleSheet.create({
   bottomBar: {
