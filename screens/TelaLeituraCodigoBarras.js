@@ -13,7 +13,7 @@ import {
   Animated,
   Easing
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 
@@ -183,6 +183,18 @@ export default function TelaLeituraCodigoBarras() {
 
   return (
     <View style={styles.container}>
+      {/* Botão de voltar flutuante */}
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={28} color="#fff" />
+      </TouchableOpacity>
+
+      {/* Instrução e ícone */}
+      <View style={styles.instructionContainer}>
+        <MaterialCommunityIcons name="barcode-scan" size={48} color="#fff" style={{ marginBottom: 8 }} />
+        <Text style={styles.instructionText}>Aponte para o código de barras do crachá</Text>
+      </View>
+
+      {/* Overlay escurecido com viewfinder destacado */}
       <CameraView
         key={cameraKey}
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
@@ -192,32 +204,31 @@ export default function TelaLeituraCodigoBarras() {
             "upc_a", "upc_e",
             "code39", "code93", "code128",
             "itf14", "codabar",
-            "qr" // Mantido caso queira escanear QR Codes também em outros contextos
+            "qr"
           ],
         }}
         style={StyleSheet.absoluteFillObject}
       />
-      <View style={styles.overlay}>
-        <View style={styles.scanMarkerContainer}>
-          <View style={styles.scanMarker}>
-            {/* Linha de scan (opcional, para visualização) */}
-            {/* <View style={styles.scanLine} /> */}
-            <Ionicons name="scan-outline" size={Dimensions.get('window').width * 0.8} color="rgba(255,255,255,0.3)" />
+      <View style={styles.overlay} pointerEvents="none">
+        {/* Viewfinder */}
+        <View style={styles.viewfinderContainer}>
+          <View style={styles.viewfinder}>
+            {/* Cantos coloridos */}
+            <View style={[styles.corner, styles.topLeft]} />
+            <View style={[styles.corner, styles.topRight]} />
+            <View style={[styles.corner, styles.bottomLeft]} />
+            <View style={[styles.corner, styles.bottomRight]} />
+            {/* Linha de scan animada */}
+            <Animated.View style={[styles.scanLine, scanLineStyle]} />
           </View>
         </View>
-        <Text style={styles.instructionText}>
-          Aponte a câmera para o CÓDIGO DE BARRAS do crachá
-        </Text>
-        {showUnauthorizedMessage && (
-          <View style={styles.unauthorizedContainer}>
-            <Ionicons name="close-circle-outline" size={30} color="#FF6B6B" />
-            <Text style={styles.unauthorizedText}>Crachá não autorizado!</Text>
-          </View>
-        )}
-        <TouchableOpacity style={styles.cancelButtonBottom} onPress={() => navigation.goBack()}>
-          <Text style={styles.cancelButtonText}>Cancelar</Text>
-        </TouchableOpacity>
       </View>
+      {/* Mensagem de não autorizado */}
+      {showUnauthorizedMessage && (
+        <View style={styles.unauthorizedMessageContainer}>
+          <Text style={styles.unauthorizedMessageText}>Crachá não autorizado</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -225,100 +236,144 @@ export default function TelaLeituraCodigoBarras() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black',
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 24,
+    padding: 6,
+  },
+  instructionContainer: {
+    position: 'absolute',
+    top: 110,
+    width: '100%',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  instructionText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  viewfinderContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  viewfinder: {
+    width: viewfinderWidth,
+    height: viewfinderHeight,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: '#00e676',
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  corner: {
+    position: 'absolute',
+    width: cornerSize,
+    height: cornerSize,
+    borderColor: '#00e676',
+    borderWidth: cornerBorderWidth,
+  },
+  topLeft: {
+    top: 0,
+    left: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 18,
+  },
+  topRight: {
+    top: 0,
+    right: 0,
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
+    borderTopRightRadius: 18,
+  },
+  bottomLeft: {
+    bottom: 0,
+    left: 0,
+    borderRightWidth: 0,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 18,
+  },
+  bottomRight: {
+    bottom: 0,
+    right: 0,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    borderBottomRightRadius: 18,
+  },
+  scanLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 4,
+    backgroundColor: '#00e676',
+    opacity: 0.85,
+    borderRadius: 2,
+  },
+  unauthorizedMessageContainer: {
+    position: 'absolute',
+    bottom: 80,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 20,
+  },
+  unauthorizedMessageText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    backgroundColor: 'rgba(255,0,0,0.7)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    textAlign: 'center',
   },
   containerCenter: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#2c3e50',
-    padding: 20,
+    backgroundColor: '#000',
   },
   infoText: {
-    fontSize: 18,
-    color: 'white',
+    color: '#fff',
+    fontSize: 16,
     textAlign: 'center',
-    marginTop: 15,
-    marginBottom: 20,
+    marginTop: 16,
   },
   button: {
-    backgroundColor: '#38A169',
-    paddingHorizontal: 20,
+    backgroundColor: '#00e676',
+    paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
-    marginBottom: 10,
-  },
-  buttonCancel: {
-    backgroundColor: '#e74c3c',
+    marginTop: 16,
   },
   buttonText: {
-    color: 'white',
-    fontSize: 16,
+    color: '#000',
     fontWeight: 'bold',
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 30,
-    paddingBottom: 50,
-  },
-  scanMarkerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scanMarker: {
-    width: Dimensions.get('window').width * 0.85, // Aumentar um pouco a área do marcador
-    height: Dimensions.get('window').height * 0.3, // Altura retangular para códigos de barras
-    justifyContent: 'center',
-    alignItems: 'center',
-    // backgroundColor: 'rgba(255,255,255,0.05)', // Para visualizar a área de scan
-    // borderRadius: 10,
-  },
-  // Estilo para uma linha de scan (opcional)
-  /* scanLine: {
-    width: '90%',
-    height: 2,
-    backgroundColor: 'red',
-    position: 'absolute',
-    // Animação pode ser adicionada aqui
-  }, */
-  instructionText: {
-    color: 'white',
     fontSize: 16,
-    textAlign: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)', // Fundo mais escuro para melhor contraste
-    paddingHorizontal: 15,
-    paddingVertical: 10, // Aumentar padding vertical
-    borderRadius: 8,
-    marginBottom: 20,
   },
-  unauthorizedContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 107, 107, 0.85)', // Mais opaco
-    paddingHorizontal: 15, // Aumentar padding
-    paddingVertical: 12,
-    borderRadius: 8,
-    position: 'absolute',
-    bottom: 120,
-  },
-  unauthorizedText: {
-    color: 'white',
-    fontSize: 16,
-    marginLeft: 10,
-    fontWeight: 'bold',
-  },
-  cancelButtonBottom: {
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: 25,
-    paddingVertical: 12,
-    borderRadius: 50,
-  },
-  cancelButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+  buttonCancel: {
+    backgroundColor: '#ff5252',
+    marginTop: 10,
   },
 });

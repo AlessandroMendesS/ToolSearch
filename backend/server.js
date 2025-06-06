@@ -59,7 +59,7 @@ const startServer = async () => {
     // Verificar conexão com Supabase
     await setupDatabase();
 
-    app.listen(PORT, '0.0.0.0', () => {
+    app.listen(PORT, () => {
       console.log(`Servidor rodando na porta ${PORT}`);
       console.log(`Acesse: http://localhost:${PORT}`);
     });

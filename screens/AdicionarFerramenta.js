@@ -123,48 +123,42 @@ export default function AdicionarFerramenta() {
   const handleSubmit = async () => {
     if (!validarFormulario()) return;
     setLoading(true);
-    // Lógica de upload da imagem para o Supabase Storage e depois salvar a ferramenta
-    // Esta parte precisa ser implementada: upload da imagem e obtenção da URL pública
-    const imagemNomeUnico = `public/ferramentas/${Date.now()}_${nome.replace(/\s+/g, '_')}.jpg`;
+    const imagemNomeUnico = `ferramentas/${Date.now()}_${nome.replace(/\s+/g, '_')}.jpg`;
     let imagemUrlSupabase = null;
 
     if (imagem) {
-      console.log('--- Iniciando Upload da Imagem ---');
-      console.log('URI da Imagem:', imagem);
-      console.log('Nome do Arquivo no Bucket:', imagemNomeUnico);
       try {
+        // Voltar para o método fetch + blob
         const response = await fetch(imagem);
-        console.log('Fetch da imagem URI bem-sucedido. Status:', response.status);
         const blob = await response.blob();
-        console.log('Blob criado com sucesso. Tipo:', blob.type, 'Tamanho:', blob.size);
 
+        // Upload para o bucket correto
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('ferramentas-imagens') // Nome do seu bucket no Supabase Storage
+          .from('ferramentas-imagens')
           .upload(imagemNomeUnico, blob, {
             cacheControl: '3600',
             upsert: false,
-            contentType: blob.type
+            contentType: blob.type,
           });
-
-        console.log('Resposta do Supabase Storage Upload:', { uploadData, uploadError });
 
         if (uploadError) {
           throw uploadError;
         }
 
-        const { data: publicUrlData } = supabase.storage
+        // Obter a URL pública correta
+        const { data: publicUrlData, error: publicUrlError } = supabase.storage
           .from('ferramentas-imagens')
-          .getPublicUrl(uploadData.path);
+          .getPublicUrl(imagemNomeUnico);
+
+        if (publicUrlError) {
+          throw publicUrlError;
+        }
+
         imagemUrlSupabase = publicUrlData.publicUrl;
         console.log('URL Pública da Imagem:', imagemUrlSupabase);
-        console.log('--- Upload da Imagem Concluído ---');
-
       } catch (error) {
-        console.error("--- ERRO DETALHADO NO UPLOAD ---");
-        console.error("Mensagem de erro:", error.message);
-        console.error("Nome do erro:", error.name);
-        console.error("Objeto de erro completo:", JSON.stringify(error, null, 2));
-        Alert.alert('Erro no Upload', 'Não foi possível fazer o upload da imagem. Verifique o console para mais detalhes. Mensagem: ' + error.message);
+        console.error('Erro detalhado no upload:', error);
+        Alert.alert('Erro no Upload', 'Não foi possível fazer o upload da imagem. Mensagem: ' + error.message);
         setLoading(false);
         return;
       }
@@ -176,11 +170,11 @@ export default function AdicionarFerramenta() {
       detalhes,
       local,
       categoria_id: categoriaSelecionada.id,
-      categoria_nome: categoriaSelecionada.nome, // Pode ser útil, mas categoria_id é o principal
+      categoria_nome: categoriaSelecionada.nome,
       imagem_url: imagemUrlSupabase,
-      qrcode_url: `tool-${patrimonio}-${Date.now()}`, // Exemplo de QR Code
+      qrcode_url: `tool-${patrimonio}-${Date.now()}`,
       disponivel: true,
-      adicionado_por: user?.id || 1, // Usar user.id se disponível, senão fallback
+      adicionado_por: user?.id || 1,
     };
 
     try {
@@ -193,7 +187,7 @@ export default function AdicionarFerramenta() {
       // Limpar formulário se necessário
       setImagem(null); setNome(''); setPatrimonio(''); setDetalhes(''); setLocal(''); setCategoriaSelecionada(null);
     } catch (error) {
-      console.error("Erro ao salvar ferramenta no DB:", error);
+      console.error('Erro ao salvar ferramenta no DB:', error);
       Alert.alert('Erro ao Salvar', 'Não foi possível salvar a ferramenta no banco de dados: ' + error.message);
     } finally {
       setLoading(false);

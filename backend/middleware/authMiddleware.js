@@ -1,7 +1,7 @@
 // middleware/authMiddleware.js
 const jwt = require('jsonwebtoken');
 
-const SECRET_KEY = 'sua_chave_secreta_jwt'; // Altere isso para uma chave segura em produção
+const SECRET_KEY = process.env.JWT_SECRET || 'sua_chave_secreta_jwt'; // Use variável de ambiente em produção
 
 // Middleware para verificar se o usuário está autenticado
 const verificarToken = (req, res, next) => {

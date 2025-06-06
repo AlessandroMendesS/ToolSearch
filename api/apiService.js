@@ -2,16 +2,11 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-// Determinar a URL base da API com base na plataforma
-// Para web: use localhost
-// Para dispositivos móveis: use o IP da máquina na rede local
+// Determinar a URL base da API com base na plataforma e modo de desenvolvimento
+// __DEV__ é uma variável global do React Native que é 'true' durante o desenvolvimento
+// (quando você roda no emulador ou web local) e 'false' em builds de produção.
 const getApiUrl = () => {
-  if (Platform.OS === 'web') {
-    return 'http://localhost:3000/api';
-  } else {
-    // Use o IP do seu computador na rede para dispositivos físicos
-    return 'https://a978-2804-2894-c100-b2de-50fa-3a0b-6203-bc68.ngrok-free.app/api';
-  }
+  return 'https://backend-toolsearch.onrender.com/api';
 };
 
 

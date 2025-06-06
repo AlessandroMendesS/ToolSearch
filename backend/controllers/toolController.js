@@ -4,7 +4,7 @@ const { supabase } = require('../config/db');
 // Cadastrar nova ferramenta
 const createTool = async (req, res) => {
     try {
-        const { nome, detalhes, local, patrimonio, categoria, imagemUrl } = req.body;
+        const { nome, detalhes, local, patrimonio, categoria, imagem_url } = req.body;
 
         // Validar dados
         if (!nome || !patrimonio || !local || !categoria) {
@@ -26,7 +26,7 @@ const createTool = async (req, res) => {
             patrimonio,
             categoria,
             adicionadoPor: userId,
-            imagemUrl
+            imagem_url
         });
 
         if (result.success) {

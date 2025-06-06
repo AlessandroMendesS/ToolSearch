@@ -15,7 +15,7 @@ class Tool {
                         patrimonio: toolData.patrimonio,
                         categoria_id: toolData.categoria,
                         adicionado_por: toolData.adicionadoPor,
-                        imagem_url: toolData.imagemUrl
+                        imagem_url: toolData.imagem_url
                     }
                 ])
                 .select();
