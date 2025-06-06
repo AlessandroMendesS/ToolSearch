@@ -1,4 +1,4 @@
-// import 'react-native-gesture-handler'; // Removido, pois era para o StackNavigator
+
 import 'react-native-url-polyfill/auto';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';

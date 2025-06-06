@@ -18,6 +18,23 @@ const categoriasLista = [
   { id: '6', nome: 'Outros', icone: 'ellipsis-horizontal-circle-outline' },
 ];
 
+const InputField = ({ icon, placeholder, value, onChangeText, keyboardType = 'default', multiline = false, numberOfLines = 1 }) => (
+  <View style={styles.inputContainer}>
+    <Ionicons name={icon} size={22} color="#7DA38C" style={styles.inputIcon} />
+    <TextInput
+      style={styles.input}
+      placeholder={placeholder}
+      placeholderTextColor="#A0AEC0"
+      value={value}
+      onChangeText={onChangeText}
+      keyboardType={keyboardType}
+      multiline={multiline}
+      numberOfLines={numberOfLines}
+      textAlignVertical={multiline ? 'top' : 'center'}
+    />
+  </View>
+);
+
 export default function AdicionarFerramenta() {
   const navigation = useNavigation();
   const { user } = useAuth();
@@ -33,41 +50,61 @@ export default function AdicionarFerramenta() {
   const [categoriaModalVisivel, setCategoriaModalVisivel] = useState(false);
   const [imagemModalVisivel, setImagemModalVisivel] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      if (Platform.OS !== 'web') {
-        const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
-        const galleryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (cameraStatus.status !== 'granted' || galleryStatus.status !== 'granted') {
-          Alert.alert('Permissão Necessária', 'Precisamos de acesso à câmera e galeria para fotos.');
+  const tirarFoto = async () => {
+    try {
+      const cameraPermission = await ImagePicker.getCameraPermissionsAsync();
+      if (cameraPermission.status !== 'granted') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permissão Necessária', 'Você precisa conceder permissão à câmera para tirar fotos.');
+          return;
         }
       }
-    })();
-  }, []);
 
-  const tirarFoto = async () => {
-    setImagemModalVisivel(false);
-    let result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.7,
-    });
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImagem(result.assets[0].uri);
+      let result = await ImagePicker.launchCameraAsync({
+        mediaTypes: 'Images',
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+      });
+
+      setImagemModalVisivel(false);
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImagem(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Ocorreu um erro ao tentar abrir a câmera: ' + error.message);
+      setImagemModalVisivel(false);
     }
   };
 
   const escolherDaGaleria = async () => {
-    setImagemModalVisivel(false);
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.7,
-    });
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImagem(result.assets[0].uri);
+    try {
+      const libraryPermission = await ImagePicker.getMediaLibraryPermissionsAsync();
+      if (libraryPermission.status !== 'granted') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permissão Necessária', 'Você precisa conceder permissão à galeria para escolher uma foto.');
+          return;
+        }
+      }
+
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'Images',
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+      });
+
+      setImagemModalVisivel(false);
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImagem(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Ocorreu um erro ao tentar acessar a galeria: ' + error.message);
+      setImagemModalVisivel(false);
     }
   };
 
@@ -76,12 +113,11 @@ export default function AdicionarFerramenta() {
     if (!patrimonio.trim()) { Alert.alert('Campo Obrigatório', 'Insira o número de patrimônio.'); return false; }
     if (!local.trim()) { Alert.alert('Campo Obrigatório', 'Insira o local de armazenamento.'); return false; }
     if (!categoriaSelecionada) { Alert.alert('Campo Obrigatório', 'Selecione uma categoria.'); return false; }
-    if (!imagem) { Alert.alert('Campo Obrigatório', 'Adicione uma imagem para a ferramenta.'); return false; }
     return true;
   };
 
-  const handleVoltarParaHome = () => {
-    navigation.navigate('Home');
+  const handleVoltar = () => {
+    navigation.goBack();
   };
 
   const handleSubmit = async () => {
@@ -93,9 +129,15 @@ export default function AdicionarFerramenta() {
     let imagemUrlSupabase = null;
 
     if (imagem) {
+      console.log('--- Iniciando Upload da Imagem ---');
+      console.log('URI da Imagem:', imagem);
+      console.log('Nome do Arquivo no Bucket:', imagemNomeUnico);
       try {
         const response = await fetch(imagem);
+        console.log('Fetch da imagem URI bem-sucedido. Status:', response.status);
         const blob = await response.blob();
+        console.log('Blob criado com sucesso. Tipo:', blob.type, 'Tamanho:', blob.size);
+
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('ferramentas-imagens') // Nome do seu bucket no Supabase Storage
           .upload(imagemNomeUnico, blob, {
@@ -104,16 +146,25 @@ export default function AdicionarFerramenta() {
             contentType: blob.type
           });
 
-        if (uploadError) throw uploadError;
+        console.log('Resposta do Supabase Storage Upload:', { uploadData, uploadError });
+
+        if (uploadError) {
+          throw uploadError;
+        }
 
         const { data: publicUrlData } = supabase.storage
           .from('ferramentas-imagens')
           .getPublicUrl(uploadData.path);
         imagemUrlSupabase = publicUrlData.publicUrl;
+        console.log('URL Pública da Imagem:', imagemUrlSupabase);
+        console.log('--- Upload da Imagem Concluído ---');
 
       } catch (error) {
-        console.error("Erro no upload da imagem:", error);
-        Alert.alert('Erro no Upload', 'Não foi possível fazer o upload da imagem: ' + error.message);
+        console.error("--- ERRO DETALHADO NO UPLOAD ---");
+        console.error("Mensagem de erro:", error.message);
+        console.error("Nome do erro:", error.name);
+        console.error("Objeto de erro completo:", JSON.stringify(error, null, 2));
+        Alert.alert('Erro no Upload', 'Não foi possível fazer o upload da imagem. Verifique o console para mais detalhes. Mensagem: ' + error.message);
         setLoading(false);
         return;
       }
@@ -125,7 +176,7 @@ export default function AdicionarFerramenta() {
       detalhes,
       local,
       categoria_id: categoriaSelecionada.id,
-      // categoria_nome: categoriaSelecionada.nome, // Pode ser útil, mas categoria_id é o principal
+      categoria_nome: categoriaSelecionada.nome, // Pode ser útil, mas categoria_id é o principal
       imagem_url: imagemUrlSupabase,
       qrcode_url: `tool-${patrimonio}-${Date.now()}`, // Exemplo de QR Code
       disponivel: true,
@@ -137,7 +188,7 @@ export default function AdicionarFerramenta() {
       if (error) throw error;
 
       Alert.alert('Sucesso!', 'Ferramenta cadastrada com sucesso.', [
-        { text: 'OK', onPress: handleVoltarParaHome }
+        { text: 'OK', onPress: handleVoltar }
       ]);
       // Limpar formulário se necessário
       setImagem(null); setNome(''); setPatrimonio(''); setDetalhes(''); setLocal(''); setCategoriaSelecionada(null);
@@ -149,23 +200,6 @@ export default function AdicionarFerramenta() {
     }
   };
 
-  const InputField = ({ icon, placeholder, value, onChangeText, keyboardType = 'default', multiline = false, numberOfLines = 1 }) => (
-    <View style={styles.inputContainer}>
-      <Ionicons name={icon} size={22} color="#7DA38C" style={styles.inputIcon} />
-      <TextInput
-        style={styles.input}
-        placeholder={placeholder}
-        placeholderTextColor="#A0AEC0"
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        numberOfLines={numberOfLines}
-        textAlignVertical={multiline ? 'top' : 'center'}
-      />
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#F7FAFC" />
@@ -175,7 +209,7 @@ export default function AdicionarFerramenta() {
       >
         <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={handleVoltarParaHome} style={styles.backButton}>
+            <TouchableOpacity onPress={handleVoltar} style={styles.backButton}>
               <Ionicons name="arrow-back" size={28} color="#38A169" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Nova Ferramenta</Text>

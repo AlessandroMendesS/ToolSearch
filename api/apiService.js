@@ -10,7 +10,7 @@ const getApiUrl = () => {
     return 'http://localhost:3000/api';
   } else {
     // Use o IP do seu computador na rede para dispositivos físicos
-    return ' https://2e66-2804-2894-c100-62da-c939-df26-eac1-605e.ngrok-free.app/api';
+    return 'https://a978-2804-2894-c100-b2de-50fa-3a0b-6203-bc68.ngrok-free.app/api';
   }
 };
 
