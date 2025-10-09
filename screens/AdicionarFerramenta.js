@@ -5,6 +5,8 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
+import { decode as atob } from 'base-64';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import supabase from '../api/supabaseClient';
@@ -50,6 +52,23 @@ export default function AdicionarFerramenta() {
   const [categoriaModalVisivel, setCategoriaModalVisivel] = useState(false);
   const [imagemModalVisivel, setImagemModalVisivel] = useState(false);
 
+  // Compatibilidade entre versões do expo-image-picker
+  const MEDIA_IMAGES = (ImagePicker && ImagePicker.MediaType && (ImagePicker.MediaType.Images || ImagePicker.MediaType.Image))
+    || (ImagePicker && ImagePicker.MediaTypeOptions && ImagePicker.MediaTypeOptions.Images);
+
+  const sanitizeFileName = (name) => {
+    try {
+      const base = (name || 'imagem')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') 
+        .replace(/[^a-zA-Z0-9._-]/g, '_') 
+        .toLowerCase();
+      return base.length > 0 ? base : `img`;
+    } catch (e) {
+      return 'img';
+    }
+  };
+
   const tirarFoto = async () => {
     try {
       const cameraPermission = await ImagePicker.getCameraPermissionsAsync();
@@ -62,7 +81,7 @@ export default function AdicionarFerramenta() {
       }
 
       let result = await ImagePicker.launchCameraAsync({
-        mediaTypes: 'Images',
+        mediaTypes: MEDIA_IMAGES,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.7,
@@ -91,7 +110,7 @@ export default function AdicionarFerramenta() {
       }
 
       let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'Images',
+        mediaTypes: MEDIA_IMAGES,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.7,
@@ -123,22 +142,25 @@ export default function AdicionarFerramenta() {
   const handleSubmit = async () => {
     if (!validarFormulario()) return;
     setLoading(true);
-    const imagemNomeUnico = `ferramentas/${Date.now()}_${nome.replace(/\s+/g, '_')}.jpg`;
+    const imagemNomeUnico = `${Date.now()}_${sanitizeFileName(nome)}.jpg`;
     let imagemUrlSupabase = null;
 
     if (imagem) {
       try {
-        // Voltar para o método fetch + blob
-        const response = await fetch(imagem);
-        const blob = await response.blob();
+        // Ler arquivo local em base64 e converter para ArrayBuffer
+        const base64 = await FileSystem.readAsStringAsync(imagem, { encoding: 'base64' });
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const buffer = bytes.buffer;
 
-        // Upload para o bucket correto
+        // Upload para o bucket padronizado
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('ferramentas-imagens')
-          .upload(imagemNomeUnico, blob, {
+          .upload(imagemNomeUnico, buffer, {
             cacheControl: '3600',
             upsert: false,
-            contentType: blob.type,
+            contentType: 'image/jpeg',
           });
 
         if (uploadError) {

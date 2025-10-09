@@ -119,8 +119,81 @@ const checkAuth = async (req, res) => {
   });
 };
 
+// Controlador para atualizar dados do usuário
+const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, nascimento, codigo, cargo } = req.body;
+
+    // Verificar se o ID do token corresponde ao ID da rota
+    if (req.userId !== parseInt(id, 10)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Acesso negado: você só pode atualizar seu próprio perfil' 
+      });
+    }
+
+    const updatedUser = await User.update(id, { nome, nascimento, codigo, cargo });
+
+    if (updatedUser) {
+      res.status(200).json({
+        success: true,
+        message: 'Perfil atualizado com sucesso!',
+        user: updatedUser
+      });
+    } else {
+      res.status(404).json({ 
+        success: false, 
+        message: 'Usuário não encontrado' 
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+// Controlador para alterar a senha do usuário
+const changePassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (req.userId !== parseInt(id, 10)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Acesso negado: você só pode alterar sua própria senha' 
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'As novas senhas não coincidem' 
+      });
+    }
+
+    const result = await User.changePassword(id, currentPassword, newPassword);
+
+    if (result.success) {
+      res.status(200).json({ success: true, message: result.message });
+    } else {
+      res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
-  checkAuth
+  checkAuth,
+  updateUser,
+  changePassword
 };

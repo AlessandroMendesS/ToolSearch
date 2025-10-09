@@ -195,6 +195,17 @@ export const authService = {
 
       return { success: false, message: mensagem };
     }
+  },
+
+  updateUser: async (userId, userData) => {
+    try {
+      // O token é injetado pelo interceptor, não precisa passar aqui
+      const response = await apiClient.put(`/auth/users/${userId}`, userData);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao atualizar usuário:", error.response ? error.response.data : error.message);
+      throw error;
+    }
   }
 };
 
@@ -207,7 +218,7 @@ export const emprestimoService = {
     });
     return response.data;
   },
-  registrarDevolucao: async ({ emprestimo_id, local_devolucao }) => {
+  registrarDevolucao: async (emprestimo_id, { local_devolucao }) => {
     const response = await apiClient.put(`/emprestimos/${emprestimo_id}/devolucao`, {
       local_devolucao
     });

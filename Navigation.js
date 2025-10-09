@@ -1,24 +1,28 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-// import { createStackNavigator } from '@react-navigation/stack'; // Removido
+import { createStackNavigator } from '@react-navigation/stack';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TelaInicial from './screens/Home';
 import TelaPerfil from './screens/Perfil';
 import TelaLeituraCodigoBarras from './screens/TelaLeituraCodigoBarras';
 import TelaPesquisarFerramentas from './screens/TelaPesquisarFerramentas';
-// import TelaScannerEmprestimo from './screens/TelaScannerEmprestimo'; // Removido
+import LerQRCodes from './screens/LerQRCodes';
+import TelaTemas from './screens/TelaTemas';
+import { useTheme } from './context/ThemeContext';
 
 const Tab = createBottomTabNavigator();
-// const Stack = createStackNavigator(); // Removido
+const Stack = createStackNavigator();
 
-export default function Tabs() { // Nome original restaurado
+function Tabs() {
+  const { theme } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarStyle: estilos.bottomBar,
+        tabBarStyle: { ...estilos.bottomBar, backgroundColor: theme.card },
       }}
     >
       <Tab.Screen
@@ -26,7 +30,7 @@ export default function Tabs() { // Nome original restaurado
         component={TelaInicial}
         options={{
           tabBarIcon: ({ focused }) => (
-            <Ionicons name={focused ? "home" : "home-outline"} size={24} color={focused ? "#7DA38C" : "#fff"} />
+            <Ionicons name={focused ? "home" : "home-outline"} size={26} color={focused ? theme.primary : theme.text} />
           ),
         }}
       />
@@ -35,7 +39,7 @@ export default function Tabs() { // Nome original restaurado
         component={TelaPesquisarFerramentas}
         options={{
           tabBarIcon: ({ focused }) => (
-            <Ionicons name={focused ? "search" : "search-outline"} size={24} color={focused ? "#7DA38C" : "#fff"} />
+            <Ionicons name={focused ? "search" : "search-outline"} size={26} color={focused ? theme.primary : theme.text} />
           ),
           unmountOnBlur: true
         }}
@@ -45,7 +49,16 @@ export default function Tabs() { // Nome original restaurado
         component={TelaLeituraCodigoBarras}
         options={{
           tabBarIcon: ({ focused }) => (
-            <Ionicons name={focused ? "add" : "add-outline"} size={28} color={focused ? "#7DA38C" : "#fff"} />
+            <Ionicons name={focused ? "add-circle" : "add-circle-outline"} size={32} color={focused ? theme.primary : theme.text} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Ler QR Code"
+        component={LerQRCodes}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <Ionicons name={focused ? "qr-code" : "qr-code-outline"} size={26} color={focused ? theme.primary : theme.text} />
           ),
         }}
       />
@@ -54,7 +67,7 @@ export default function Tabs() { // Nome original restaurado
         component={TelaPerfil}
         options={{
           tabBarIcon: ({ focused }) => (
-            <Ionicons name={focused ? "person" : "person-outline"} size={24} color={focused ? "#7DA38C" : "#fff"} />
+            <Ionicons name={focused ? "person" : "person-outline"} size={26} color={focused ? theme.primary : theme.text} />
           ),
         }}
       />
@@ -62,11 +75,17 @@ export default function Tabs() { // Nome original restaurado
   );
 }
 
-// Stack Navigator Principal removido
+export default function AppNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Main" component={Tabs} />
+      <Stack.Screen name="Temas" component={TelaTemas} />
+    </Stack.Navigator>
+  );
+}
 
 const estilos = StyleSheet.create({
   bottomBar: {
-    backgroundColor: '#14351c',
     position: 'absolute',
     bottom: 0,
     left: 0,

@@ -24,9 +24,34 @@ class Tool {
                 throw new Error('Erro ao cadastrar ferramenta: ' + error.message);
             }
 
+            const ferramentaCriada = data[0];
+            // Gerar a URL pública para o QR Code usando o patrimônio
+            const qrcodeUrl = `https://gugursnnzngieaztnzjg.supabase.co/ferramentas/${ferramentaCriada.patrimonio}`;
+
+            // Atualizar o campo qrcode_url
+            const { error: updateError } = await supabase
+                .from('ferramentas')
+                .update({ qrcode_url: qrcodeUrl })
+                .eq('id', ferramentaCriada.id);
+
+            if (updateError) {
+                throw new Error('Erro ao atualizar qrcode_url: ' + updateError.message);
+            }
+
+            // Buscar o registro atualizado
+            const { data: ferramentaAtualizada, error: fetchError } = await supabase
+                .from('ferramentas')
+                .select('*')
+                .eq('id', ferramentaCriada.id)
+                .single();
+
+            if (fetchError) {
+                throw new Error('Erro ao buscar ferramenta atualizada: ' + fetchError.message);
+            }
+
             return {
                 success: true,
-                tool: data[0],
+                tool: ferramentaAtualizada,
                 message: 'Ferramenta cadastrada com sucesso!'
             };
         } catch (error) {
@@ -113,7 +138,7 @@ class Tool {
     static async uploadImage(file, fileName) {
         try {
             const { data, error } = await supabase.storage
-                .from('ferramentas')
+                .from('ferramentas-imagens')
                 .upload(fileName, file);
 
             if (error) {
@@ -122,7 +147,7 @@ class Tool {
 
             // Obter a URL pública da imagem
             const { publicURL } = supabase.storage
-                .from('ferramentas')
+                .from('ferramentas-imagens')
                 .getPublicUrl(fileName);
 
             return {

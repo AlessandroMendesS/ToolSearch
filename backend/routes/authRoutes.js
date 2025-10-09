@@ -13,4 +13,7 @@ router.post('/login', authController.login);
 // Rota para verificar o status da autenticação
 router.get('/check', verificarToken, authController.checkAuth);
 
+// Rota para atualizar dados do usuário
+router.put('/users/:id', verificarToken, authController.updateUser);
+
 module.exports = router;

@@ -11,11 +11,13 @@ import {
   Platform,
   Dimensions,
   Animated,
-  Easing
+  Easing,
+  StatusBar
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { useNavigation, useIsFocused, useFocusEffect } from '@react-navigation/native';
+import { useTheme } from '../context/ThemeContext';
 
 // Código de barras do crachá autorizado por padrão
 const CRACHA_AUTORIZADO_PADRAO = '123456789';
@@ -28,6 +30,7 @@ const cornerSize = 30;
 const cornerBorderWidth = 5;
 
 export default function TelaLeituraCodigoBarras() {
+  const { theme } = useTheme();
   const navigation = useNavigation();
   const isFocused = useIsFocused(); // Hook para verificar se a tela está em foco
   const [permission, requestPermission] = useCameraPermissions();
@@ -39,19 +42,41 @@ export default function TelaLeituraCodigoBarras() {
   // Animação da linha de scan
   const scanLineAnimation = useRef(new Animated.Value(0)).current;
 
+  // Reset completo quando a tela ganha foco
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Tela ganhou foco - resetando scanner');
+      resetScanner();
+      return () => {
+        console.log('Tela perdeu foco');
+        if (unauthorizedTimerRef.current) {
+          clearTimeout(unauthorizedTimerRef.current);
+        }
+        stopScanLineAnimation();
+      };
+    }, [])
+  );
+
   useEffect(() => {
-    // Solicitar permissão da câmera quando o componente montar ou o usuário focar na tela
-    if (isFocused && !permission?.granted) {
+    // Solicitar permissão da câmera quando o componente montar
+    if (!permission?.granted) {
       requestPermission();
     }
-    // Limpar o timer quando o componente é desmontado ou perde foco
-    return () => {
-      if (unauthorizedTimerRef.current) {
-        clearTimeout(unauthorizedTimerRef.current);
-      }
-      stopScanLineAnimation();
-    };
-  }, [isFocused, permission]);
+  }, [permission]);
+
+  const resetScanner = () => {
+    console.log('Resetando scanner...');
+    setScanned(false);
+    setShowUnauthorizedMessage(false);
+    if (unauthorizedTimerRef.current) {
+      clearTimeout(unauthorizedTimerRef.current);
+      unauthorizedTimerRef.current = null;
+    }
+    setCameraKey(Date.now());
+    if (permission?.granted) {
+      startScanLineAnimation();
+    }
+  };
 
   const startScanLineAnimation = () => {
     scanLineAnimation.setValue(0); // Reseta a posição da linha
@@ -78,24 +103,21 @@ export default function TelaLeituraCodigoBarras() {
   };
 
   const allowNewScanAttempt = () => {
-    if (unauthorizedTimerRef.current) {
-      clearTimeout(unauthorizedTimerRef.current);
-      unauthorizedTimerRef.current = null;
-    }
-    setShowUnauthorizedMessage(false);
-    setScanned(false);
-    setCameraKey(Date.now()); // Mudar a key força o remount da CameraView
-    if (isFocused && permission?.granted) {
-      startScanLineAnimation(); // Reinicia a animação de scan
-    }
+    console.log('Permitindo nova tentativa de scan');
+    resetScanner();
   };
 
   const handleBarCodeScanned = ({ type, data }) => {
-    if (scanned) return;
+    console.log('Tentando ler código de barras...', { scanned, type, data });
+    
+    if (scanned) {
+      console.log('Scanner já foi usado, ignorando...');
+      return;
+    }
 
+    console.log(`Código de barras escaneado: Tipo: ${type}, Dado: ${data}`);
     setScanned(true);
     setShowUnauthorizedMessage(false);
-    console.log(`Código de barras escaneado: Tipo: ${type}, Dado: ${data}`);
 
     if (data === CRACHA_AUTORIZADO_PADRAO) {
       Alert.alert(
@@ -105,11 +127,12 @@ export default function TelaLeituraCodigoBarras() {
           {
             text: 'OK',
             onPress: () => {
+              console.log('Navegando para AdicionarFerramenta');
               navigation.navigate('AdicionarFerramenta');
             }
           }
         ],
-        { cancelable: false } // Impede que o alerta seja dispensado tocando fora
+        { cancelable: false }
       );
     } else {
       setShowUnauthorizedMessage(true);
@@ -140,34 +163,32 @@ export default function TelaLeituraCodigoBarras() {
       unauthorizedTimerRef.current = setTimeout(() => {
         allowNewScanAttempt();
         unauthorizedTimerRef.current = null;
-      }, 7000); // Aumentado para 7 segundos para dar tempo de ler o alerta
+      }, 7000);
     }
   };
 
   if (!permission) {
-    // Permissões ainda estão carregando
-    return <View style={styles.containerCenter}><Text style={styles.infoText}>Solicitando permissão da câmera...</Text></View>;
+    return <View style={[styles.containerCenter, { backgroundColor: theme.background }]}><Text style={[styles.infoText, { color: theme.text }]}>Solicitando permissão da câmera...</Text></View>;
   }
 
   if (!permission.granted) {
-    // Permissões não foram concedidas
     return (
-      <View style={styles.containerCenter}>
-        <Ionicons name="warning-outline" size={50} color="#FFA500" />
-        <Text style={styles.infoText}>Precisamos da sua permissão para usar a câmera.</Text>
-        <TouchableOpacity style={styles.button} onPress={requestPermission}>
-          <Text style={styles.buttonText}>Conceder Permissão</Text>
+      <View style={[styles.containerCenter, { backgroundColor: theme.background }]}>
+        <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.background} />
+        <Ionicons name="warning-outline" size={50} color={theme.error} />
+        <Text style={[styles.infoText, { color: theme.text }]}>Precisamos da sua permissão para usar a câmera.</Text>
+        <TouchableOpacity style={[styles.button, { backgroundColor: theme.primary }]} onPress={requestPermission}>
+          <Text style={[styles.buttonText, { color: theme.buttonText }]}>Conceder Permissão</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.buttonCancel]} onPress={() => navigation.goBack()}>
-          <Text style={styles.buttonText}>Cancelar</Text>
+        <TouchableOpacity style={[styles.button, styles.buttonCancel, { backgroundColor: theme.error }]} onPress={() => navigation.goBack()}>
+          <Text style={[styles.buttonText, { color: theme.buttonText }]}>Cancelar</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  // Se a tela não estiver em foco, não renderizar a câmera para economizar recursos
   if (!isFocused) {
-    return <View style={styles.containerCenter}><Text style={styles.infoText}>Aguardando foco na tela...</Text></View>;
+    return <View style={[styles.containerCenter, { backgroundColor: theme.background }]}><Text style={[styles.infoText, { color: theme.text }]}>Aguardando foco na tela...</Text></View>;
   }
 
   const scanLineStyle = {
@@ -175,23 +196,36 @@ export default function TelaLeituraCodigoBarras() {
       {
         translateY: scanLineAnimation.interpolate({
           inputRange: [0, 1],
-          outputRange: [-viewfinderHeight / 2 + 5, viewfinderHeight / 2 - 5], // Movimenta dentro do viewfinder
+          outputRange: [-viewfinderHeight / 2 + 5, viewfinderHeight / 2 - 5],
         }),
       },
     ],
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.background} />
       {/* Botão de voltar flutuante */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={28} color="#fff" />
+        <Ionicons name="arrow-back" size={28} color={theme.text} />
       </TouchableOpacity>
+
+      {/* Botão de reset manual */}
+      <TouchableOpacity style={styles.resetButton} onPress={allowNewScanAttempt}>
+        <Ionicons name="refresh" size={24} color={theme.text} />
+      </TouchableOpacity>
+
+      {/* Status do scanner */}
+      <View style={styles.statusContainer}>
+        <Text style={[styles.statusText, { color: theme.text, backgroundColor: theme.card }]}>
+          Status: {scanned ? 'Aguardando reset' : 'Pronto para scan'}
+        </Text>
+      </View>
 
       {/* Instrução e ícone */}
       <View style={styles.instructionContainer}>
         <MaterialCommunityIcons name="barcode-scan" size={48} color="#fff" style={{ marginBottom: 8 }} />
-        <Text style={styles.instructionText}>Aponte para o código de barras do crachá</Text>
+        <Text style={styles.instructionText}>Aponte para o código de barras do crachá para adicionar a ferramenta</Text>
       </View>
 
       {/* Overlay escurecido com viewfinder destacado */}
@@ -212,21 +246,21 @@ export default function TelaLeituraCodigoBarras() {
       <View style={styles.overlay} pointerEvents="none">
         {/* Viewfinder */}
         <View style={styles.viewfinderContainer}>
-          <View style={styles.viewfinder}>
+          <View style={[styles.viewfinder, { borderColor: theme.primary }]}>
             {/* Cantos coloridos */}
-            <View style={[styles.corner, styles.topLeft]} />
-            <View style={[styles.corner, styles.topRight]} />
-            <View style={[styles.corner, styles.bottomLeft]} />
-            <View style={[styles.corner, styles.bottomRight]} />
+            <View style={[styles.corner, styles.topLeft, { borderColor: theme.primary }]} />
+            <View style={[styles.corner, styles.topRight, { borderColor: theme.primary }]} />
+            <View style={[styles.corner, styles.bottomLeft, { borderColor: theme.primary }]} />
+            <View style={[styles.corner, styles.bottomRight, { borderColor: theme.primary }]} />
             {/* Linha de scan animada */}
-            <Animated.View style={[styles.scanLine, scanLineStyle]} />
+            <Animated.View style={[styles.scanLine, scanLineStyle, { backgroundColor: theme.primary }]} />
           </View>
         </View>
       </View>
       {/* Mensagem de não autorizado */}
       {showUnauthorizedMessage && (
         <View style={styles.unauthorizedMessageContainer}>
-          <Text style={styles.unauthorizedMessageText}>Crachá não autorizado</Text>
+          <Text style={[styles.unauthorizedMessageText, { backgroundColor: theme.error, color: theme.buttonText }]}>Crachá não autorizado</Text>
         </View>
       )}
     </View>
@@ -236,7 +270,6 @@ export default function TelaLeituraCodigoBarras() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -245,31 +278,53 @@ const styles = StyleSheet.create({
     top: 50,
     left: 20,
     zIndex: 10,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: 24,
     padding: 6,
   },
+  resetButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: 24,
+    padding: 6,
+  },
+  statusContainer: {
+    position: 'absolute',
+    top: 90,
+    left: 20,
+    right: 20,
+    zIndex: 10,
+    alignItems: 'center',
+  },
+  statusText: {
+    fontSize: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    
+  },
   instructionContainer: {
     position: 'absolute',
-    top: 110,
+    top: 130,
     width: '100%',
     alignItems: 'center',
     zIndex: 10,
+    
   },
   instructionText: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
-    textShadowColor: '#000',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    color: '#fff',
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(98, 98, 98, 0.45)',
   },
   viewfinderContainer: {
     justifyContent: 'center',
@@ -280,8 +335,7 @@ const styles = StyleSheet.create({
     height: viewfinderHeight,
     borderRadius: 18,
     borderWidth: 2,
-    borderColor: '#00e676',
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
@@ -290,7 +344,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: cornerSize,
     height: cornerSize,
-    borderColor: '#00e676',
     borderWidth: cornerBorderWidth,
   },
   topLeft: {
@@ -326,7 +379,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 4,
-    backgroundColor: '#00e676',
     opacity: 0.85,
     borderRadius: 2,
   },
@@ -339,10 +391,8 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   unauthorizedMessageText: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-    backgroundColor: 'rgba(255,0,0,0.7)',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -352,28 +402,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000',
   },
   infoText: {
-    color: '#fff',
     fontSize: 16,
     textAlign: 'center',
     marginTop: 16,
   },
   button: {
-    backgroundColor: '#00e676',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
     marginTop: 16,
   },
   buttonText: {
-    color: '#000',
     fontWeight: 'bold',
     fontSize: 16,
   },
   buttonCancel: {
-    backgroundColor: '#ff5252',
     marginTop: 10,
   },
 });

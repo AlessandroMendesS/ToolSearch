@@ -82,6 +82,29 @@ class User {
       throw new Error('Erro na autenticação: ' + error.message);
     }
   }
+
+  // Método para atualizar um usuário
+  static async update(id, fields) {
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .update(fields)
+        .eq('id', id)
+        .select();
+
+      if (error) {
+        throw new Error('Erro ao atualizar usuário: ' + error.message);
+      }
+
+      if (data.length === 0) {
+        return null; // Usuário não encontrado
+      }
+
+      return data[0];
+    } catch (error) {
+      throw new Error('Erro ao atualizar usuário: ' + error.message);
+    }
+  }
 }
 
 module.exports = User;

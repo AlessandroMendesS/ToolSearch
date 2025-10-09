@@ -1,60 +1,98 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, Switch, TouchableOpacity } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../context/ThemeContext";
 
 export default function TelaTemas({ navigation }) {
-  const [modoEscuro, setModoEscuro] = useState(false);
+  const { theme, isDarkMode, toggleTheme } = useTheme();
+
+  const renderOpcaoTema = (tema, icone) => (
+    <TouchableOpacity
+      style={[
+        estilos.opcaoTema,
+        { borderColor: theme.border },
+        (isDarkMode && tema === "escuro") || (!isDarkMode && tema === "claro")
+          ? { backgroundColor: theme.primary, borderColor: theme.primary }
+          : null,
+      ]}
+      onPress={toggleTheme}
+    >
+      <Ionicons
+        name={icone}
+        size={24}
+        color={
+          (isDarkMode && tema === "escuro") || (!isDarkMode && tema === "claro")
+            ? "#fff"
+            : theme.text
+        }
+      />
+      <Text
+        style={[
+          estilos.textoOpcaoTema,
+          { color: theme.text },
+          (isDarkMode && tema === "escuro") || (!isDarkMode && tema === "claro")
+            ? estilos.textoOpcaoTemaSelecionada
+            : null,
+        ]}
+      >
+        {tema.charAt(0).toUpperCase() + tema.slice(1)}
+      </Text>
+    </TouchableOpacity>
+  );
 
   return (
-    <View style={estilos.container}>
+    <View style={[estilos.container, { backgroundColor: theme.background }]}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={estilos.botaoVoltar}>
-        <Ionicons name="arrow-back" size={24} color="#333" />
+        <Ionicons name="arrow-back" size={24} color={theme.text} />
       </TouchableOpacity>
 
-      <Text style={estilos.titulo}>Temas</Text>
-      <Text style={estilos.subtitulo}>Escolha o tema que mais se adapta com seu estilo</Text>
+      <Text style={[estilos.titulo, { color: theme.text }]}>Temas</Text>
+      <Text style={[estilos.subtitulo, { color: theme.text }]}>
+        Escolha o tema que mais se adapta ao seu estilo.
+      </Text>
 
-      <View style={estilos.linhaSwitch}>
-        <Text style={estilos.rotulo}>Escuro</Text>
-        <Switch value={modoEscuro} onValueChange={setModoEscuro} />
-      </View>
-
-      <View style={estilos.grelha}>
-        {Array.from({ length: 6 }).map((_, index) => (
-          <View key={index} style={estilos.circuloTema}>
-            <Text style={estilos.textoTema}>Inverno</Text>
-          </View>
-        ))}
+      <View style={estilos.containerOpcoes}>
+        {renderOpcaoTema("claro", "sunny-outline")}
+        {renderOpcaoTema("escuro", "moon-outline")}
       </View>
     </View>
   );
 }
 
 const estilos = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#f6f6f6" },
-  botaoVoltar: { marginBottom: 20 },
-  titulo: { fontSize: 24, fontWeight: "bold", marginBottom: 4 },
-  subtitulo: { fontSize: 14, color: "#555", marginBottom: 20 },
-  linhaSwitch: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 30,
+  container: {
+    flex: 1,
+    padding: 20,
   },
-  rotulo: { fontSize: 16 },
-  grelha: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  circuloTema: {
-    width: "30%",
-    aspectRatio: 1,
-    backgroundColor: "#D8E7FF",
-    borderRadius: 100,
-    justifyContent: "center",
-    alignItems: "center",
+  botaoVoltar: {
     marginBottom: 20,
   },
-  textoTema: { fontSize: 12, marginTop: 8, color: "#555" },
+  titulo: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  subtitulo: {
+    fontSize: 14,
+    marginBottom: 30,
+  },
+  containerOpcoes: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  opcaoTema: {
+    alignItems: "center",
+    padding: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    width: "45%",
+  },
+  textoOpcaoTema: {
+    marginTop: 10,
+    fontSize: 16,
+  },
+  textoOpcaoTemaSelecionada: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
 });

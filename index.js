@@ -1,3 +1,4 @@
+import './pollyfills';
 import { registerRootComponent } from 'expo';
 
 import App from './App';

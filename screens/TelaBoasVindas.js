@@ -1,10 +1,14 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
+import { useTheme } from '../context/ThemeContext';
 
 export default function BoasVindas({ navigation }) {
+  const { theme } = useTheme();
+
   return (
-    <View style={estilos.container}>
+    <View style={[estilos.container, { backgroundColor: theme.background }]}>
+      <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.background} />
       {/* Gradiente radial como fundo */}
       <Svg height="150%" width="150%" style={StyleSheet.absoluteFill}>
         <Defs>
@@ -18,8 +22,8 @@ export default function BoasVindas({ navigation }) {
             fy="50%"
             gradientUnits="userSpaceOnUse"
           >
-            <Stop offset="0%" stopColor="#ccffcc" stopOpacity="0.5" />
-            <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            <Stop offset="0%" stopColor={theme.primary} stopOpacity="0.2" />
+            <Stop offset="100%" stopColor={theme.background} stopOpacity="0" />
           </RadialGradient>
         </Defs>
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#grad)" />
@@ -30,25 +34,25 @@ export default function BoasVindas({ navigation }) {
 
       {/* Textos centralizados */}
       <View style={estilos.areaTexto}>
-        <Text style={estilos.textoBemVindo}>Bem-Vindo(a) ao</Text>
-        <Text style={estilos.toolsearch}>ToolSearch!</Text>
+        <Text style={[estilos.textoBemVindo, { color: theme.text }]}>Bem-Vindo(a) ao</Text>
+        <Text style={[estilos.toolsearch, { color: theme.text }]}>ToolSearch!</Text>
       </View>
 
       {/* Botão de alternância */}
-      <View style={estilos.botaoAlternancia}>
-        <View style={estilos.deslizador} />
+      <View style={[estilos.botaoAlternancia, { borderColor: theme.primary, backgroundColor: theme.card }]}>
+        <View style={[estilos.deslizador, { backgroundColor: theme.primary }]} />
         <TouchableOpacity
           style={estilos.opcao}
           onPress={() => navigation.navigate('Cadastro')}
         >
-          <Text style={estilos.textoBotao}>Registro</Text>
+          <Text style={[estilos.textoBotao, { color: theme.text }]}>Registro</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={estilos.opcao}
           onPress={() => navigation.navigate('Login')}
         >
-          <Text style={estilos.textoBotao}>Entrar</Text>
+          <Text style={[estilos.textoBotao, { color: theme.text }]}>Entrar</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -58,7 +62,6 @@ const estilos = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: '#fff',
     paddingTop: 80,
     paddingBottom: 40,
   },
@@ -87,8 +90,6 @@ const estilos = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     borderWidth: 2,
-    borderColor: "#fff",
-    backgroundColor: "transparent",
     position: "absolute",
     bottom: 60,
   },
@@ -96,7 +97,6 @@ const estilos = StyleSheet.create({
     position: "absolute",
     width: 100,
     height: "100%",
-    backgroundColor: "#FFF",
     borderRadius: 25,
     left: 100,
   },
@@ -108,7 +108,6 @@ const estilos = StyleSheet.create({
   textoBotao: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#000",
   },
 });
 

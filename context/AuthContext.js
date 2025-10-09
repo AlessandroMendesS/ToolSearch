@@ -87,6 +87,7 @@ export const AuthProvider = ({ children }) => {
       await authService.logout();
       setUser(null);
       setAuthenticated(false);
+      await AsyncStorage.removeItem('userData');
       return { success: true };
     } catch (error) {
       return { success: false, message: error.message };
@@ -126,6 +127,23 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Função para atualizar os dados do usuário
+  const updateUser = async (userId, userData) => {
+    try {
+      const response = await authService.updateUser(userId, userData);
+      if (response.success) {
+        const updatedUser = { ...user, ...userData };
+        setUser(updatedUser);
+        await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+        return { success: true, user: updatedUser };
+      } else {
+        return { success: false, message: response.message };
+      }
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  };
+
   // Valores que serão disponibilizados pelo contexto
   const value = {
     user,
@@ -135,7 +153,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     checkAuth,
-    updateUserImage
+    updateUserImage,
+    updateUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

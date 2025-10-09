@@ -13,40 +13,49 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { emprestimoService } from '../api/apiService';
 import { useAuth } from '../context/AuthContext';
+import QRCode from 'react-native-qrcode-svg';
+import { useTheme } from '../context/ThemeContext';
 
 export default function DetalheFerramenta({ route, navigation }) {
   const { ferramenta: ferramentaInicial } = route.params;
   const { user } = useAuth();
+  const { theme } = useTheme();
 
   const [ferramenta, setFerramenta] = useState(ferramentaInicial);
   const [emprestada, setEmprestada] = useState(!ferramentaInicial.disponivel);
   const [emprestimoId, setEmprestimoId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [podeDevolver, setPodeDevolver] = useState(false);
+  const [emprestimoInfo, setEmprestimoInfo] = useState(null);
+  const [erroDevolver, setErroDevolver] = useState('');
 
-  // Função para buscar empréstimo aberto
+  // Buscar empréstimo aberto ou último empréstimo para histórico
   const fetchEmprestimoAberto = async () => {
     try {
       const res = await emprestimoService.buscarEmprestimoAberto(ferramentaInicial.id);
       if (res && res.success) {
         if (res.emprestimo) {
-          setEmprestada(true);
+          setEmprestada(res.emprestimo.status === 'emprestado');
           setEmprestimoId(res.emprestimo.id);
-          setPodeDevolver(res.emprestimo.usuario_id === user.id);
+          setPodeDevolver(res.emprestimo.usuario_id === user.id && res.emprestimo.status === 'emprestado');
+          setEmprestimoInfo(res.emprestimo);
         } else {
           setEmprestada(false);
           setEmprestimoId(null);
           setPodeDevolver(false);
+          setEmprestimoInfo(null);
         }
       } else {
         setEmprestada(false);
         setEmprestimoId(null);
         setPodeDevolver(false);
+        setEmprestimoInfo(null);
       }
     } catch (err) {
       setEmprestada(false);
       setEmprestimoId(null);
       setPodeDevolver(false);
+      setEmprestimoInfo(null);
     }
   };
 
@@ -57,6 +66,7 @@ export default function DetalheFerramenta({ route, navigation }) {
 
   const handleEmprestar = async () => {
     setLoading(true);
+    setErroDevolver('');
     try {
       await emprestimoService.registrarEmprestimo({
         ferramenta_id: ferramenta.id,
@@ -74,25 +84,28 @@ export default function DetalheFerramenta({ route, navigation }) {
 
   const handleDevolver = async () => {
     setLoading(true);
+    setErroDevolver('');
     try {
-      await emprestimoService.registrarDevolucao({
-        emprestimo_id: emprestimoId,
-        local_devolucao: ferramenta.local || ''
-      });
+      await emprestimoService.registrarDevolucao(emprestimoId, { local_devolucao: ferramenta.local || '' });
       alert('Ferramenta devolvida com sucesso!');
       await fetchEmprestimoAberto();
     } catch (err) {
-      alert('Erro ao devolver ferramenta.');
+      let msg = 'Erro ao devolver ferramenta.';
+      if (err.response && err.response.data && err.response.data.message) {
+        msg = err.response.data.message;
+      }
+      setErroDevolver(msg);
     } finally {
       setLoading(false);
     }
   };
 
+  // Renderização
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={28} color="#5D8A70" />
+          <Ionicons name="chevron-back" size={28} color={theme.primary} />
         </TouchableOpacity>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContentContainer}>
@@ -104,33 +117,47 @@ export default function DetalheFerramenta({ route, navigation }) {
               resizeMode="contain"
             />
           ) : (
-            <View style={styles.imagePlaceholder}>
-              <Ionicons name="construct-outline" size={80} color="#B3DBC5" />
+            <View style={[styles.imagePlaceholder, { backgroundColor: theme.card }]}>
+              <Ionicons name="construct-outline" size={80} color={theme.primary} />
             </View>
           )}
         </View>
-
-        <Text style={styles.title}>{ferramenta.nome}</Text>
-
-        <View style={styles.infoContainer}>
-          <Text style={styles.sectionTitle}>Detalhes</Text>
-          <Text style={styles.infoText}>{ferramenta.detalhes || 'Não informado'}</Text>
-
-          <Text style={styles.sectionTitle}>Local</Text>
+        <Text style={[styles.title, { color: theme.text }]}>{ferramenta.nome}</Text>
+        <View style={[styles.infoContainer, { backgroundColor: theme.card }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Detalhes</Text>
+          <Text style={[styles.infoText, { color: theme.text }]}>{ferramenta.detalhes || 'Não informado'}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Local</Text>
           <View style={styles.localRow}>
-            <Ionicons name="location-outline" size={16} color="#4A5568" style={{ marginRight: 5 }} />
-            <Text style={styles.infoText}>{ferramenta.local || 'Não informado'}</Text>
+            <Ionicons name="location-outline" size={16} color={theme.text} style={{ marginRight: 5 }} />
+            <Text style={[styles.infoText, { color: theme.text }]}>{ferramenta.local || 'Não informado'}</Text>
           </View>
         </View>
-
+        {/* Histórico do último empréstimo */}
+        {emprestimoInfo ? (
+          <View style={[styles.historicoBox, { backgroundColor: theme.card }]}>
+            <Text style={[styles.historicoTitle, { color: theme.primary }]}>Último empréstimo</Text>
+            <Text style={[styles.historicoUsuario, { color: theme.text }]}>Usuário: {emprestimoInfo.usuarios?.nome || '#' + emprestimoInfo.usuario_id}</Text>
+            <Text style={[styles.historicoData, { color: theme.text }]}>Data: {emprestimoInfo.data_emprestimo ? new Date(emprestimoInfo.data_emprestimo).toLocaleString('pt-BR') : '-'}</Text>
+            {emprestimoInfo.status === 'devolvido' && (
+              <Text style={[styles.historicoStatus, { color: '#4BB543' }]}>&#9679; Devolvida</Text>
+            )}
+            {emprestimoInfo.status === 'emprestado' && (
+              <Text style={[styles.historicoStatus, { color: '#FFA726' }]}>&#9679; Em uso</Text>
+            )}
+          </View>
+        ) : null}
+        {/* Mensagem de erro do botão devolver */}
+        {erroDevolver ? (
+          <View style={styles.erroBox}><Text style={styles.erroText}>{erroDevolver}</Text></View>
+        ) : null}
         {/* Botão de Emprestar/Devolver */}
         <View style={{ alignItems: 'center', marginBottom: 30 }}>
           {emprestada && podeDevolver ? (
-            <TouchableOpacity style={[styles.botao, { backgroundColor: '#E53E3E' }]} onPress={handleDevolver} disabled={loading}>
+            <TouchableOpacity style={[styles.botao, { backgroundColor: '#38A169' }]} onPress={handleDevolver} disabled={loading}>
               <Text style={styles.textoBotao}>{loading ? 'Devolvendo...' : 'Devolver'}</Text>
             </TouchableOpacity>
           ) : !emprestada ? (
-            <TouchableOpacity style={[styles.botao, { backgroundColor: '#38A169' }]} onPress={handleEmprestar} disabled={loading}>
+            <TouchableOpacity style={[styles.botao, { backgroundColor: '#236D4D' }]} onPress={handleEmprestar} disabled={loading}>
               <Text style={styles.textoBotao}>{loading ? 'Emprestando...' : 'Emprestar'}</Text>
             </TouchableOpacity>
           ) : null}
@@ -225,5 +252,50 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  historicoBox: {
+    width: '90%',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  historicoTitle: {
+    fontWeight: 'bold',
+    fontSize: 15,
+    marginBottom: 6,
+  },
+  historicoUsuario: {
+    fontSize: 15,
+    marginBottom: 2,
+  },
+  historicoData: {
+    fontSize: 14,
+    opacity: 0.7
+  },
+  historicoStatus: {
+    fontWeight: 'bold',
+    fontSize: 13,
+    marginTop: 8,
+  },
+  erroBox: {
+    backgroundColor: '#FEE2E2',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    marginBottom: 12,
+    alignItems: 'center',
+    alignSelf: 'center'
+  },
+  erroText: {
+    color: '#C53030',
+    fontSize: 15
   },
 });

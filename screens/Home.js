@@ -4,20 +4,21 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-ico
 import { useAuth } from "../context/AuthContext";
 import { useNavigation } from '@react-navigation/native';
 import { toolService } from "../api/apiService";
+import { useTheme } from "../context/ThemeContext";
 
 const { width: screenWidth } = Dimensions.get('window');
 
-// Ícones de Categorias Rápidas conforme a imagem
+// Atalhos rápidos pelas categorias reais da tela de pesquisa
 const categoriasRapidasHome = [
-  { id: '1', nomeExato: 'Furadeiras', nomeDisplay: "Elétricas", IconeComponent: MaterialCommunityIcons, iconeNome: "drill", iconeSize: 26, corIcone: "#4A5568" },
-  { id: '2', nomeExato: 'Chaves', nomeDisplay: "Manuais", IconeComponent: FontAwesome5, iconeNome: "screwdriver", iconeSize: 23, corIcone: "#4A5568" },
-  { id: '4', nomeExato: 'Medidores', nomeDisplay: "Medidos", IconeComponent: MaterialCommunityIcons, iconeNome: "tape-measure", iconeSize: 26, corIcone: "#4A5568" },
+  { id: '1', nome: 'Furadeiras', IconeComponent: MaterialCommunityIcons, iconeNome: 'tools', iconeSize: 28, iconeDisplay: 'Furadeira' },
+  { id: '3', nome: 'Alicates', IconeComponent: MaterialCommunityIcons, iconeNome: 'pliers', iconeSize: 28, iconeDisplay: 'Alicate' },
+  { id: '5', nome: 'Serras', IconeComponent: FontAwesome5, iconeNome: 'cut', iconeSize: 25, iconeDisplay: 'Serra' }
 ];
 
 // Dados para o banner de destaque (simulando um item de carrossel)
 const bannerDestaqueData = [
-  { id: 'mais_utilizada', titulo: "Ferramenta Mais Utilizada", corFundo: "#68D391" },
-  { id: 'menos_utilizada', titulo: "Ferramenta Menos Utilizada", corFundo: "#F6AD55" },
+  { id: 'mais_utilizada', titulo: "", corFundo: "#68D391" },
+  { id: 'menos_utilizada', titulo: "", corFundo: "#F6AD55" },
 ];
 
 const CARD_WIDTH = screenWidth * 0.9;
@@ -25,6 +26,7 @@ const SPACING = (screenWidth - CARD_WIDTH) / 2; // Para centralizar o card ativo
 
 const HomeScreen = () => {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const navigation = useNavigation();
   const [imagemPerfil, setImagemPerfil] = useState(null);
   const [indiceBannerAtivo, setIndiceBannerAtivo] = useState(0);
@@ -32,6 +34,7 @@ const HomeScreen = () => {
   const [mostUsedTools, setMostUsedTools] = useState([]);
   const [loadingMostUsed, setLoadingMostUsed] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [leastUsedTool, setLeastUsedTool] = useState(null);
 
   // Função para buscar todos os dados da Home (incluindo ferramentas mais utilizadas)
   const fetchData = async () => {
@@ -40,8 +43,13 @@ const HomeScreen = () => {
       const response = await toolService.getMostUsedTools();
       if (response.success && response.tools) {
         setMostUsedTools(response.tools);
+        // Definir a ferramenta menos utilizada (última do array ordenado)
+        if (response.tools.length > 0) {
+          setLeastUsedTool(response.tools[response.tools.length - 1]);
+        } else {
+          setLeastUsedTool(null);
+        }
       }
-      // Aqui você pode adicionar chamadas para buscar outros dados da Home se necessário
     } catch (error) {
       console.error("Erro ao buscar dados da Home:", error);
     } finally {
@@ -97,7 +105,7 @@ const HomeScreen = () => {
 
   const renderMostUsedTool = ({ item }) => (
     <TouchableOpacity
-      style={estilos.cardFerramentaMaisUsada}
+      style={[estilos.cardFerramentaMaisUsada, { backgroundColor: theme.card }]}
       onPress={() => navigation.navigate('DetalheFerramenta', { ferramenta: item })}
     >
       <Image
@@ -109,25 +117,25 @@ const HomeScreen = () => {
           <Text style={estilos.emUsoTexto}>Em uso</Text>
         </View>
       )}
-      <Text style={estilos.nomeFerramentaMaisUsada} numberOfLines={1}>{item.nome}</Text>
+      <Text style={[estilos.nomeFerramentaMaisUsada, { color: theme.text }]} numberOfLines={1}>{item.nome}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={estilos.container}>
-      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <View style={estilos.topo}>
+    <SafeAreaView style={[estilos.container, { backgroundColor: theme.background }]}>
+      <StatusBar translucent backgroundColor="transparent" barStyle={theme.dark ? "light-content" : "dark-content"} />
+      <View style={[estilos.topo, { backgroundColor: theme.background }]}>
         <View style={estilos.row}>
           <Image
             source={imagemPerfil ? { uri: imagemPerfil } : require("../assets/img/perfil.png")}
             style={estilos.fotoPerfil}
           />
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={estilos.saudacao}>{saudacao} 👋</Text>
-            <Text style={estilos.nomeUsuario} numberOfLines={1}>{user?.nome || "Usuário"}</Text>
+            <Text style={[estilos.saudacao, { color: theme.text }]}>{saudacao} 👋</Text>
+            <Text style={[estilos.nomeUsuario, { color: theme.text }]} numberOfLines={1}>{user?.nome || "Usuário"}</Text>
           </View>
-          <TouchableOpacity style={estilos.qrButton} onPress={() => Alert.alert("QR Code", "Funcionalidade do QR Code a ser implementada.")}>
-            <Ionicons name="qr-code-outline" size={28} color="#38a169" />
+          <TouchableOpacity style={[estilos.qrButton, { backgroundColor: theme.primary + '20' }]} onPress={() => navigation.navigate('Ler QR Code')}>
+            <Ionicons name="qr-code-outline" size={28} color={theme.primary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -136,7 +144,7 @@ const HomeScreen = () => {
         contentContainerStyle={estilos.scrollContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#38a169"]} tintColor={"#38a169"} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} tintColor={theme.primary} />
         }
       >
         {/* Carrossel de Banner de Destaque */}
@@ -148,14 +156,41 @@ const HomeScreen = () => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={estilos.carrosselContainer}
             onScroll={onScrollBanner}
-            scrollEventThrottle={16} // Para onScroll funcionar bem no Android
+            scrollEventThrottle={16}
             decelerationRate="fast"
-            snapToInterval={CARD_WIDTH} // Importante para o efeito de snap correto
+            snapToInterval={CARD_WIDTH}
             snapToAlignment="start"
           >
             {bannerDestaqueData.map((banner, index) => (
               <View key={banner.id} style={[estilos.bannerCard, { backgroundColor: banner.corFundo, width: CARD_WIDTH }]}>
                 <Text style={estilos.bannerTexto}>{banner.titulo}</Text>
+                {/* Exibir ferramenta mais ou menos utilizada conforme o banner ativo */}
+                {banner.id === 'mais_utilizada' && mostUsedTools.length > 0 && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 20, padding: 12, marginBottom: 23, elevation: 2 }}>
+                    <Image
+                      source={mostUsedTools[0]?.imagem_url ? { uri: mostUsedTools[0].imagem_url } : require('../assets/img/inicio.png')}
+                      style={{ width: 64, height: 64, borderRadius: 12, backgroundColor: '#f0f0f0', borderWidth: 1, borderColor: '#e0e0e0', marginRight: 16 }}
+                      resizeMode="cover"
+                    />
+                    <View style={{ flex: 1, marginLeft: 0 }}>
+                      <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 4 }}>Ferramenta mais utilizada</Text>
+                      <Text style={{ fontSize: 15, color: '#555' }}>{mostUsedTools[0]?.nome || 'Nome da ferramenta'}</Text>
+                    </View>
+                  </View>
+                )}
+                {banner.id === 'menos_utilizada' && leastUsedTool && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 20, padding: 12, marginBottom: 22, elevation: 2 }}>
+                    <Image
+                      source={leastUsedTool?.imagem_url ? { uri: leastUsedTool.imagem_url } : require('../assets/img/inicio.png')}
+                      style={{ width: 64, height: 64, borderRadius: 12, backgroundColor: '#f0f0f0', borderWidth: 1, borderColor: '#e0e0e0', marginRight: 16 }}
+                      resizeMode="cover"
+                    />
+                    <View style={{ flex: 1, marginLeft: 0 }}>
+                      <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 4 }}>Ferramenta menos utilizada</Text>
+                      <Text style={{ fontSize: 15, color: '#555' }}>{leastUsedTool?.nome || 'Nome da ferramenta'}</Text>
+                    </View>
+                  </View>
+                )}
               </View>
             ))}
           </ScrollView>
@@ -180,17 +215,18 @@ const HomeScreen = () => {
         {/* Categorias Rápidas */}
         <View style={estilos.categoriasRapidasContainer}>
           {categoriasRapidasHome.map((cat) => {
+            const grupo = { id: cat.id, nome: cat.nome };
             const Icon = cat.IconeComponent;
             return (
               <TouchableOpacity
                 key={cat.id}
                 style={estilos.categoriaRapidaItem}
-                onPress={() => handleNavegarParaPesquisa({ id: cat.id, nome: cat.nomeExato })}
+                onPress={() => handleNavegarParaPesquisa(grupo)}
               >
-                <View style={estilos.categoriaIconeContainer}>
-                  <Icon name={cat.iconeNome} size={cat.iconeSize} color={cat.corIcone} />
+                <View style={[estilos.categoriaIconeContainer, { backgroundColor: theme.card }]}>
+                  <Icon name={cat.iconeNome} size={cat.iconeSize} color={theme.text} />
                 </View>
-                <Text style={estilos.categoriaRapidaNome} numberOfLines={1}>{cat.nomeDisplay}</Text>
+                <Text style={[estilos.categoriaRapidaNome, { color: theme.text }]} numberOfLines={1}>{cat.nome}</Text>
               </TouchableOpacity>
             );
           })}
@@ -199,9 +235,9 @@ const HomeScreen = () => {
         {/* Seção Ferramentas mais Emprestadas */}
         <View style={estilos.secaoFerramentasEmprestadasContainer}>
           <View style={estilos.secaoTituloContainer}>
-            <Text style={estilos.secaoTitulo}>Ferramentas mais Emprestadas</Text>
+            <Text style={[estilos.secaoTitulo, { color: theme.text }]}>Ferramentas mais Emprestadas</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Buscar', { screen: 'TelaPesquisarFerramentas' })} style={estilos.verTodasButton}>
-              <Text style={estilos.verTodasTexto}>Ver Todas</Text>
+              <Text style={[estilos.verTodasTexto, { color: theme.primary }]}>Ver Todas</Text>
             </TouchableOpacity>
           </View>
 
@@ -217,7 +253,7 @@ const HomeScreen = () => {
               columnWrapperStyle={{ justifyContent: 'space-between' }}
             />
           ) : (
-            <Text style={estilos.nenhumaFerramentaTexto}>Nenhuma ferramenta para mostrar.</Text>
+            <Text style={[estilos.nenhumaFerramentaTexto, { color: theme.text }]}>Nenhuma ferramenta para mostrar.</Text>
           )}
         </View>
 

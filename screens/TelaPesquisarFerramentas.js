@@ -1,39 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Image,
-  SafeAreaView, StatusBar, FlatList, ActivityIndicator, Dimensions
+  SafeAreaView, StatusBar, FlatList, ActivityIndicator,
+  Animated, Easing // Adicionar Animated
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import supabase from '../api/supabaseClient';
+import { useTheme } from '../context/ThemeContext';
 
 // Grupos de ferramentas com todos os que existem no AdicionarFerramenta.js
 const grupos = [
   { id: '1', nome: 'Furadeiras', imagem: require('../assets/img/furadeira.png') },
   { id: '2', nome: 'Chaves', imagem: require('../assets/img/chaves.png') },
   { id: '3', nome: 'Alicates', imagem: require('../assets/img/alicates.png') },
-  { id: '4', nome: 'Medidores', imagem: null },
-  { id: '5', nome: 'Serras', imagem: null },
-  { id: '6', nome: 'Outros', imagem: null },
+  { id: '4', nome: 'Medidores', imagem: require('../assets/img/Medidores.png') },
+  { id: '5', nome: 'Serras', imagem: require('../assets/img/serras.png') },
+  { id: '6', nome: 'Outros', imagem: require('../assets/img/OUtros.png') },
 ];
 
 export default function TelaPesquisarFerramentas({ navigation }) {
+  const { theme } = useTheme();
   const [grupoSelecionado, setGrupoSelecionado] = useState(null);
   const [busca, setBusca] = useState('');
   const [ferramentas, setFerramentas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState(null);
+  // Para animação de abertura do grupo
+  const animLista = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Carrega todas as ferramentas inicialmente ou quando um grupo é desmarcado e não há busca
     if (!grupoSelecionado && !busca.trim()) {
       buscarTodasFerramentas();
     }
-  }, [grupoSelecionado, busca]); // Adicionado busca para resetar se a busca for limpa
+  }, [grupoSelecionado, busca]);
 
   useEffect(() => {
-    // Busca ferramentas por categoria se um grupo for selecionado
     if (grupoSelecionado) {
       buscarFerramentasPorCategoria(grupoSelecionado.id);
+      // Animação suave de entrada da lista
+      animLista.setValue(0);
+      Animated.timing(animLista, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.cubic)
+      }).start();
     }
   }, [grupoSelecionado]);
 
@@ -81,12 +92,12 @@ export default function TelaPesquisarFerramentas({ navigation }) {
       (f.detalhes && f.detalhes.toLowerCase().includes(busca.toLowerCase())) ||
       (f.local && f.local.toLowerCase().includes(busca.toLowerCase()))
     )
-    : ferramentas; // Se não há busca, ferramentasFiltradas é igual a ferramentas (do grupo ou todas)
+    : ferramentas;
 
   const handleSelecionarGrupo = (grupo) => {
-    setBusca(''); // Limpa a busca ao selecionar um grupo
+    setBusca('');
     if (grupoSelecionado && grupoSelecionado.id === grupo.id) {
-      setGrupoSelecionado(null); // Desseleciona se clicar no mesmo
+      setGrupoSelecionado(null);
     } else {
       setGrupoSelecionado(grupo);
     }
@@ -94,17 +105,23 @@ export default function TelaPesquisarFerramentas({ navigation }) {
 
   const limparBuscaEGrupo = () => {
     setBusca('');
-    setGrupoSelecionado(null);
-    // buscarTodasFerramentas() será chamado pelo useEffect
+    // Animação de saída (fade out)
+    Animated.timing(animLista, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true
+    }).start(({ finished }) => {
+      if (finished) setGrupoSelecionado(null);
+    });
   };
 
   const renderCategoriaItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.categoriaCard}
+      style={[styles.categoriaCard, { backgroundColor: theme.card }]}
       onPress={() => handleSelecionarGrupo(item)}
       activeOpacity={0.7}
     >
-      <Text style={styles.categoriaTexto}>{item.nome}</Text>
+      <Text style={[styles.categoriaTexto, { color: theme.primary }]}>{item.nome}</Text>
       {item.imagem ? (
         <Image source={item.imagem} style={styles.categoriaImagem} resizeMode="contain" />
       ) : (
@@ -117,7 +134,7 @@ export default function TelaPesquisarFerramentas({ navigation }) {
 
   const renderFerramentaItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.ferramentaCard}
+      style={[styles.ferramentaCard, { backgroundColor: theme.card }]}
       activeOpacity={0.8}
       onPress={() => navigation.navigate('DetalheFerramenta', { ferramenta: item })}
     >
@@ -129,11 +146,10 @@ export default function TelaPesquisarFerramentas({ navigation }) {
         </View>
       )}
       <View style={styles.ferramentaInfoContainer}>
-        <Text style={styles.ferramentaNome}>{item.nome}</Text>
-        <Text style={styles.ferramentaLocal}>Local: {item.local || 'Não informado'}</Text>
-        {/* <Text style={styles.ferramentaPatrimonio}>Patrimônio: {item.patrimonio}</Text> */}
+        <Text style={[styles.ferramentaNome, { color: theme.text }]}>{item.nome}</Text>
+        <Text style={[styles.ferramentaLocal, { color: theme.text }]}>Local: {item.local || 'Não informado'}</Text>
         <View style={styles.ferramentaDisponivelContainer}>
-          <Text style={styles.ferramentaDisponivelTexto}>Disponível:</Text>
+          <Text style={[styles.ferramentaDisponivelTexto, { color: theme.text }]}>Disponível:</Text>
           <View style={[
             styles.disponivelIndicator,
             { backgroundColor: item.disponivel ? '#48bb78' : '#f56565' }
@@ -147,93 +163,86 @@ export default function TelaPesquisarFerramentas({ navigation }) {
   const mostrarResultadosBusca = busca.trim();
   const mostrarFerramentasGrupo = !busca.trim() && grupoSelecionado;
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#e6f4ea" barStyle="dark-content" />
-      <Text style={styles.title}>Pesquisar</Text>
-
-      <View style={styles.searchContainer}>
-        <Ionicons name="search-outline" size={22} color="#4a5568" style={styles.searchIcon} />
+  const ListHeader = () => (
+    <View>
+      <Text style={[styles.title, { color: theme.primary }]}>Pesquisar</Text>
+      <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
+        <Ionicons name="search-outline" size={22} color={theme.text} style={styles.searchIcon} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: theme.text }]}
           placeholder="Pesquisar ferramentas..."
-          placeholderTextColor="#a0aec0"
+          placeholderTextColor={theme.text + '80'}
           value={busca}
-          onChangeText={(text) => {
-            setBusca(text);
-            if (text.trim() && grupoSelecionado) {
-              // Se começar a buscar com grupo selecionado, buscar em todas as ferramentas
-              // ou manter a busca apenas dentro do grupo? Por ora, mantém no grupo.
-              // Para buscar em todas, chamar buscarTodasFerramentas() aqui se text.length === 1 (início da busca)
-            }
-          }}
+          onChangeText={(text) => setBusca(text)}
         />
         {busca.trim() !== '' && (
           <TouchableOpacity onPress={() => setBusca('')} style={styles.clearSearchButton}>
-            <Ionicons name="close-circle-outline" size={22} color="#718096" />
+            <Ionicons name="close-circle-outline" size={22} color={theme.text} />
           </TouchableOpacity>
         )}
       </View>
-
-      {/* Botão Voltar para Categorias */}
       {(mostrarFerramentasGrupo || mostrarResultadosBusca) && (
         <TouchableOpacity
           style={styles.botaoVoltarCategorias}
           onPress={limparBuscaEGrupo}
         >
-          <Ionicons name="arrow-back-outline" size={20} color="#2c5282" />
-          <Text style={styles.botaoVoltarCategoriasTexto}>
+          <Ionicons name="arrow-back-outline" size={20} color={theme.primary} />
+          <Text style={[styles.botaoVoltarCategoriasTexto, { color: theme.primary }]}>
             {grupoSelecionado && !busca.trim() ? `Voltar para Categorias (de ${grupoSelecionado.nome})` : 'Voltar para Categorias'}
           </Text>
         </TouchableOpacity>
       )}
-
       {loading && (
         <View style={styles.centeredMessageContainer}>
-          <ActivityIndicator size="large" color="#38a169" />
-          <Text style={styles.loadingText}>Carregando...</Text>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.loadingText, { color: theme.text }]}>Carregando...</Text>
         </View>
       )}
-
       {!loading && erro && (
         <View style={styles.centeredMessageContainer}>
           <Ionicons name="alert-circle-outline" size={40} color="#e53e3e" />
-          <Text style={styles.erroText}>{erro}</Text>
+          <Text style={[styles.erroText, { color: theme.text }]}>{erro}</Text>
         </View>
       )}
+    </View>
+  );
 
-      {!loading && !erro && (
-        <>
-          {mostrarCategorias && (
-            <FlatList
-              data={grupos}
-              renderItem={renderCategoriaItem}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.listContentContainer}
-              ListEmptyComponent={
-                <View style={styles.centeredMessageContainer}>
-                  <Text style={styles.emptyText}>Nenhuma categoria disponível.</Text>
-                </View>
-              }
-            />
-          )}
-          {(mostrarResultadosBusca || mostrarFerramentasGrupo) && (
-            <FlatList
-              data={ferramentasFiltradas}
-              renderItem={renderFerramentaItem}
-              keyExtractor={(item) => item.id.toString()}
-              contentContainerStyle={styles.listContentContainer}
-              ListEmptyComponent={
-                <View style={styles.centeredMessageContainer}>
-                  <Ionicons name="sad-outline" size={40} color="#718096" />
-                  <Text style={styles.emptyText}>
-                    {busca.trim() ? 'Nenhuma ferramenta encontrada para sua busca.' : 'Nenhuma ferramenta nesta categoria.'}
-                  </Text>
-                </View>
-              }
-            />
-          )}
-        </>
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background, flex: 1 }]}>
+      <StatusBar backgroundColor={theme.background} barStyle={theme.dark ? 'light-content' : 'dark-content'} />
+      <ListHeader />
+      {loading && (
+        <View style={styles.centeredMessageContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.loadingText, { color: theme.text }]}>Carregando...</Text>
+        </View>
+      )}
+      {!loading && mostrarCategorias && (
+        <FlatList
+          data={grupos}
+          renderItem={renderCategoriaItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContentContainer}
+          ListEmptyComponent={
+            <View style={styles.centeredMessageContainer}>
+              <Text style={[styles.emptyText, { color: theme.text }]}>Nenhuma categoria disponível.</Text>
+            </View>
+          }
+        />
+      )}
+      {!loading && (mostrarResultadosBusca || mostrarFerramentasGrupo) && (
+        <FlatList
+          data={ferramentasFiltradas}
+          renderItem={renderFerramentaItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContentContainer}
+          ListEmptyComponent={
+            <View style={styles.centeredMessageContainer}>
+              <Ionicons name="sad-outline" size={40} color={theme.text} />
+              <Text style={[styles.emptyText, { color: theme.text }]}>Nenhuma ferramenta nesta categoria.</Text>
+            </View>
+          }
+        />
       )}
     </SafeAreaView>
   );
@@ -241,7 +250,7 @@ export default function TelaPesquisarFerramentas({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flex: 1, // Remover o flex:1 daqui pois já estará na SafeAreaView
     backgroundColor: '#e6f4ea', // Fundo verde bem claro
   },
   title: {

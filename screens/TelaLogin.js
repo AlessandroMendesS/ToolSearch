@@ -7,11 +7,13 @@ import {
   StyleSheet, 
   Image,
   Alert,
-  ActivityIndicator 
+  ActivityIndicator,
+  StatusBar
 } from "react-native";
-import { Ionicons, FontAwesome } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext"; // Use o hook de autenticação
+import { useTheme } from "../context/ThemeContext";
 
 const TelaLogin = () => {
   const [nome, setNome] = useState("");
@@ -22,6 +24,7 @@ const TelaLogin = () => {
   
   const navigation = useNavigation();
   const { login } = useAuth(); // Use o método login do contexto de autenticação
+  const { theme } = useTheme();
 
   const handleLogin = async () => {
     // Limpar erro anterior
@@ -65,26 +68,27 @@ const TelaLogin = () => {
   };
 
   return (
-    <View style={estilos.container}>
+    <View style={[estilos.container, { backgroundColor: theme.background }]}>
+      <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.background} />
       {/* Botão de voltar */}
-      <TouchableOpacity onPress={() => navigation.goBack()} style={estilos.botaoVoltar}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={[estilos.botaoVoltar, { backgroundColor: theme.primary }]}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
       {/* Título */}
-      <Text style={estilos.titulo}>Olá novamente!</Text>
-      <Text style={estilos.subtitulo}>Bem-vindo de volta, sentimos a sua falta!</Text>
+      <Text style={[estilos.titulo, { color: theme.text }]}>Olá novamente!</Text>
+      <Text style={[estilos.subtitulo, { color: theme.text }]}>Bem-vindo de volta, sentimos a sua falta!</Text>
 
       {/* Mensagem de erro */}
       {erro ? <Text style={estilos.erroMensagem}>{erro}</Text> : null}
 
       {/* Campo Nome */}
-      <View style={estilos.campoEntrada}>
-        <FontAwesome name="user-o" size={18} color="#999" />
+      <View style={[estilos.campoEntrada, { backgroundColor: theme.card }]}>
+        <Ionicons name="person-outline" size={18} color={theme.text} />
         <TextInput
-          style={estilos.entrada}
+          style={[estilos.entrada, { color: theme.text }]}
           placeholder="Digite seu nome"
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.text + '80'}
           value={nome}
           onChangeText={setNome}
           autoCapitalize="none"
@@ -92,24 +96,24 @@ const TelaLogin = () => {
       </View>
 
       {/* Campo Senha */}
-      <View style={estilos.campoEntrada}>
-        <Ionicons name="lock-closed-outline" size={20} color="#999" />
+      <View style={[estilos.campoEntrada, { backgroundColor: theme.card }]}>
+        <Ionicons name="lock-closed-outline" size={20} color={theme.text} />
         <TextInput
-          style={estilos.entrada}
+          style={[estilos.entrada, { color: theme.text }]}
           placeholder="Digite sua senha"
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.text + '80'}
           secureTextEntry={!senhaVisivel}
           value={senha}
           onChangeText={setSenha}
         />
         <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
-          <Ionicons name={senhaVisivel ? "eye" : "eye-off"} size={20} color="#999" />
+          <Ionicons name={senhaVisivel ? "eye" : "eye-off"} size={20} color={theme.text} />
         </TouchableOpacity>
       </View>
 
       {/* Botão Entrar */}
       <TouchableOpacity 
-        style={estilos.botaoEntrar}
+        style={[estilos.botaoEntrar, { backgroundColor: theme.primary }]}
         onPress={handleLogin}
         disabled={loading}
       >
@@ -122,24 +126,15 @@ const TelaLogin = () => {
 
       {/* Separador */}
       <View style={estilos.separador}>
-        <View style={estilos.linha} />
-        <Text style={estilos.textoSeparador}>ou entre com o e-mail institucional</Text>
-        <View style={estilos.linha} />
+        <View style={[estilos.linha, { backgroundColor: theme.border }]} />
+        <Text style={[estilos.textoSeparador, { color: theme.text }]}>ou entre com o e-mail institucional</Text>
+        <View style={[estilos.linha, { backgroundColor: theme.border }]} />
       </View>
 
-      {/* Botão Google */}
-      <TouchableOpacity style={estilos.botaoGoogle}>
-        <Image
-          source={require("../assets/img/google.png")}
-          style={estilos.iconeGoogle}
-        />
-        <Text style={estilos.textoBotaoGoogle}>Entrar com Google</Text>
-      </TouchableOpacity>
-
       {/* Link Cadastro */}
-      <Text style={estilos.textoCadastro}>
+      <Text style={[estilos.textoCadastro, { color: theme.text }]}>
         Ainda não possui uma conta?{" "}
-        <Text style={estilos.linkCadastro} onPress={() => navigation.navigate("Cadastro")}>
+        <Text style={[estilos.linkCadastro, { color: theme.primary }]} onPress={() => navigation.navigate("Cadastro")}>
           Cadastre-se
         </Text>
       </Text>
@@ -152,7 +147,6 @@ export default TelaLogin;
 const estilos = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     padding: 20,
     justifyContent: "center",
   },
@@ -160,7 +154,6 @@ const estilos = StyleSheet.create({
     position: "absolute",
     top: 40,
     left: 20,
-    backgroundColor: "#7DA38C",
     padding: 12,
     borderRadius: 50,
   },
@@ -173,7 +166,6 @@ const estilos = StyleSheet.create({
   subtitulo: {
     fontSize: 14,
     textAlign: "center",
-    color: "#444",
     marginBottom: 25,
   },
   erroMensagem: {
@@ -184,7 +176,6 @@ const estilos = StyleSheet.create({
   campoEntrada: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F5F5F5",
     padding: 14,
     borderRadius: 30,
     marginBottom: 15,
@@ -193,10 +184,8 @@ const estilos = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
     fontSize: 14,
-    color: "#000",
   },
   botaoEntrar: {
-    backgroundColor: "#7DA38C",
     padding: 16,
     borderRadius: 30,
     alignItems: "center",
@@ -215,38 +204,17 @@ const estilos = StyleSheet.create({
   linha: {
     flex: 1,
     height: 1,
-    backgroundColor: "#ccc",
   },
   textoSeparador: {
     marginHorizontal: 10,
     fontSize: 12,
-    color: "#666",
-  },
-  botaoGoogle: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F5F5F5",
-    padding: 14,
-    borderRadius: 10,
-    justifyContent: "center",
-  },
-  iconeGoogle: {
-    width: 18,
-    height: 18,
-    marginRight: 8,
-  },
-  textoBotaoGoogle: {
-    fontSize: 14,
-    color: "#000",
   },
   textoCadastro: {
     marginTop: 30,
     textAlign: "center",
     fontSize: 14,
-    color: "#000",
   },
   linkCadastro: {
-    color: "#7DA38C",
     fontWeight: "bold",
   },
 });

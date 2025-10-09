@@ -1,36 +1,60 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   Image,
   TouchableOpacity,
   SafeAreaView,
   Modal,
   TextInput,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  StatusBar,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext"; // Import useTheme
+import { estilos } from "./Perfil.styles";
 
 export default function TelaPerfil({ navigation }) {
-  const [imagemPerfil, setImagemPerfil] = useState(null);
+  const { user, logout, updateUser, updateUserImage } = useAuth();
+  const { theme } = useTheme(); // Use theme
   const [modalVisivel, setModalVisivel] = useState(false);
-  const { user } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editableEmail, setEditableEmail] = useState(user?.email || "");
+  const [emailModalVisivel, setEmailModalVisivel] = useState(false); // Novo estado
 
   const [dadosFormulario, setDadosFormulario] = useState({
     nome: user?.nome || "",
-    nascimento: "",
-    codigo: "",
-    cargo: "",
+    data_nascimento: user?.data_nascimento || "",
+    codigo_funcionario: user?.codigo_funcionario || "",
+    cargo: user?.cargo || "",
   });
 
-  const [modoEdicao, setModoEdicao] = useState({
-    nome: false,
-    nascimento: false,
-    codigo: false,
-    cargo: false,
-  });
+  useEffect(() => {
+    if (user) {
+      setDadosFormulario({
+        nome: user.nome || "",
+        data_nascimento: user.data_nascimento || "",
+        codigo_funcionario: user.codigo_funcionario || "",
+        cargo: user.cargo || "",
+      });
+    }
+  }, [user]);
+
+  const handleEmailSave = () => {
+    // Aqui você pode adicionar qualquer validação necessária para o e-mail
+    // Por enquanto, apenas fechar o modal.
+    setEmailModalVisivel(false);
+  };
+
+  const handleEmailCancel = () => {
+    // Resetar o email editável para o valor atual se o usuário cancelar
+    setEditableEmail(user?.email || "");
+    setEmailModalVisivel(false);
+  };
 
   const escolherImagem = async () => {
     let resultado = await ImagePicker.launchImageLibraryAsync({
@@ -41,230 +65,135 @@ export default function TelaPerfil({ navigation }) {
     });
 
     if (!resultado.canceled) {
-      setImagemPerfil(resultado.assets[0].uri);
+      const newImageUrl = resultado.assets[0].uri;
+      updateUserImage(newImageUrl);
     }
   };
 
-  const alternarEdicao = (campo) => {
-    setModoEdicao((anterior) => ({
-      ...anterior,
-      [campo]: !anterior[campo],
-    }));
+  const handleChange = (campo, valor) => {
+    setDadosFormulario((anterior) => ({ ...anterior, [campo]: valor }));
   };
 
-  const handleChange = (campo, valor) => {
-    setDadosFormulario((anterior) => ({
-      ...anterior,
-      [campo]: valor,
-    }));
+  const handleSaveChanges = async () => {
+    // As informações são agora salvas estaticamente no estado local
+    // Não há necessidade de chamar uma API de backend para esta funcionalidade.
+    Alert.alert("Sucesso", "Seus dados foram atualizados localmente.");
+    setIsEditing(false);
   };
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  const renderInfoLinha = (icone, placeholder, valor, campo) => (
+    <View style={estilos.infoRow}>
+      <Ionicons name={icone} size={24} color={theme.text} style={estilos.infoIcon} />
+      <TextInput
+        style={[estilos.infoInput, { color: theme.text, borderBottomColor: theme.border }, isEditing && { borderBottomColor: theme.primary }]}
+        value={valor}
+        onChangeText={(text) => handleChange(campo, text)}
+        placeholder={placeholder}
+        placeholderTextColor={theme.text}
+        editable={isEditing}
+      />
+    </View>
+  );
+
+  const renderBotao = (icone, texto, onPress) => (
+    <TouchableOpacity style={estilos.button} onPress={onPress}>
+      <Ionicons name={icone} size={24} color={theme.text} style={estilos.buttonIcon} />
+      <Text style={[estilos.buttonText, { color: theme.text }]}>{texto}</Text>
+    </TouchableOpacity>
+  );
 
   return (
-    <SafeAreaView style={estilos.container}>
-      <View style={estilos.fundoCabecalho} />
-
-      <TouchableOpacity onPress={escolherImagem} style={estilos.wrapperImagemPerfil}>
-        <Image
-          source={
-            imagemPerfil
-              ? { uri: imagemPerfil }
-              : require("../assets/img/perfil.png")
-          }
-          style={estilos.imagemPerfil}
-        />
-      </TouchableOpacity>
-
-      <View style={estilos.cartao}>
-        <TouchableOpacity style={estilos.linha} onPress={() => setModalVisivel(true)}>
-          <Text style={estilos.icone}>👤</Text>
-          <Text style={estilos.texto}>Conta</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={estilos.linha}>
-          <Text style={estilos.icone}>🔒</Text>
-          <Text style={estilos.texto}>Senhas</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={estilos.cartao}>
-        <TouchableOpacity onPress={() => navigation.navigate("Temas")} style={estilos.linha}>
-          <Text style={estilos.icone}>🎨</Text>
-          <Text style={estilos.texto}>Temas</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("Linguagens")} style={estilos.linha}>
-          <Text style={estilos.icone}>🌐</Text>
-          <Text style={estilos.texto}>Linguagem</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={estilos.linha}>
-          <Text style={estilos.icone}>⬅️</Text>
-          <Text style={estilos.texto}>Sair</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Modal flutuante */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisivel}
-        onRequestClose={() => setModalVisivel(false)}
-      >
-        <View style={estilos.overlayModal}>
-          <View style={estilos.cardModal}>
-            <TouchableOpacity
-              onPress={() => setModalVisivel(false)}
-              style={estilos.fecharVerde}
-            >
-              <Ionicons name="close" size={20} color="#fff" />
-            </TouchableOpacity>
-
-            <Text style={estilos.saudacao}>Olá {user?.nome}</Text>
-
-            {[
-              { key: "nome", label: "Nome", placeholder: "Digite seu nome completo" },
-              { key: "nascimento", label: "Data de nascimento", placeholder: "DD/MM/AAAA" },
-              { key: "codigo", label: "Código de funcionário", placeholder: "Digite seu código" },
-              { key: "cargo", label: "Cargo", placeholder: "Digite seu cargo" },
-            ].map((item) => (
-              <View key={item.key} style={estilos.campo}>
-                <Text style={estilos.label}>{item.label}</Text>
-                <View style={estilos.linhaInput}>
-                  <TextInput
-                    style={[
-                      estilos.input,
-                      modoEdicao[item.key] ? estilos.inputAtivo : {},
-                    ]}
-                    value={dadosFormulario[item.key]}
-                    onChangeText={(texto) => handleChange(item.key, texto)}
-                    editable={modoEdicao[item.key]}
-                    placeholder={item.placeholder}
-                    placeholderTextColor="#999"
-                  />
-                  <TouchableOpacity onPress={() => alternarEdicao(item.key)}>
-                    <Ionicons
-                      name={modoEdicao[item.key] ? "checkmark-outline" : "create-outline"}
-                      size={20}
-                      color="#72B096"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-          </View>
+    <SafeAreaView style={[estilos.container, { backgroundColor: theme.background, flex: 1 }]}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.background} />
+        <View style={estilos.header}>
+          <TouchableOpacity onPress={escolherImagem} style={estilos.profileImageContainer}>
+            <Image
+              source={user?.imagemPerfil ? { uri: user.imagemPerfil } : require("../assets/img/perfil.png")}
+              style={estilos.profileImage}
+            />
+          </TouchableOpacity>
+          <Text style={[estilos.userName, { color: theme.text }]}>{
+            typeof user?.nome === "string" ? user.nome : "Nome do Usuário"
+          }</Text>
         </View>
-      </Modal>
+        <View style={[estilos.card, { backgroundColor: theme.card }]}>
+          <Text style={[estilos.cardTitle, { color: theme.text }]}>Informações Pessoais</Text>
+          {renderInfoLinha("person-outline", "Nome", dadosFormulario.nome, "nome")}
+          {renderInfoLinha("calendar-outline", "Nascimento", dadosFormulario.data_nascimento, "data_nascimento")}
+          {renderInfoLinha("barcode-outline", "Código", dadosFormulario.codigo_funcionario, "codigo_funcionario")}
+          {renderInfoLinha("briefcase-outline", "Cargo", dadosFormulario.cargo, "cargo")}
+          {isEditing ? (
+            <TouchableOpacity style={[estilos.saveButton, { backgroundColor: theme.primary }]} onPress={handleSaveChanges}>
+              <Text style={[estilos.saveButtonText, { color: theme.buttonText }]}>Salvar Alterações</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={[estilos.editProfileButton, { backgroundColor: theme.primary }]} onPress={() => setIsEditing(true)}>
+              <Ionicons name="create-outline" size={24} color={theme.buttonText} />
+              <Text style={[estilos.editProfileButtonText, { color: theme.buttonText }]}>Editar Perfil</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <View style={[estilos.card, { backgroundColor: theme.card }]}>
+          <Text style={[estilos.cardTitle, { color: theme.text }]}>Configurações</Text>
+          {renderBotao("color-palette-outline", "Temas", () => navigation.navigate("Temas"))}
+          {renderBotao("language-outline", "Linguagem", () => navigation.navigate("Linguagens"))}
+          {renderBotao("qr-code-outline", "Meus QR Codes", () => navigation.navigate("MeusQRCodes"))}
+        </View>
+        <View style={[estilos.card, { backgroundColor: theme.card }]}>
+          {renderBotao("log-out-outline", "Sair", handleLogout)}
+        </View>
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalVisivel}
+          onRequestClose={() => setModalVisivel(false)}
+        >
+          <View style={estilos.modalOverlay}>
+            <View style={[estilos.modalContent, { backgroundColor: theme.card }]}>
+              <TouchableOpacity onPress={() => setModalVisivel(false)} style={estilos.closeButton}>
+                <Ionicons name="close-circle" size={30} color={theme.error} />
+              </TouchableOpacity>
+              <Text style={[estilos.modalTitle, { color: theme.text }]}>Alterar Senha</Text>
+              {/* Adicionar campos para alterar senha aqui */}
+            </View>
+          </View>
+        </Modal>
+        {/* Modal para Edição de E-mail */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={emailModalVisivel}
+          onRequestClose={handleEmailCancel}
+        >
+          <View style={estilos.modalOverlay}>
+            <View style={[estilos.modalContent, { backgroundColor: theme.card }]}>
+              <Text style={[estilos.modalTitle, { color: theme.text }]}>Editar E-mail</Text>
+              <TextInput
+                style={[estilos.textInput, { color: theme.text, borderBottomColor: theme.border }]} // Estilo para o input do modal
+                value={editableEmail}
+                onChangeText={setEditableEmail}
+                placeholder="Novo E-mail"
+                placeholderTextColor={theme.text}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              <View style={estilos.modalButtonContainer}> {/* Container para os botões de ação */}
+                <TouchableOpacity style={[estilos.modalButton, { backgroundColor: theme.primary }]} onPress={handleEmailSave}>
+                  <Text style={[estilos.modalButtonText, { color: theme.buttonText }]}>Salvar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[estilos.modalButton, { backgroundColor: theme.secondary }]} onPress={handleEmailCancel}>
+                  <Text style={[estilos.modalButtonText, { color: theme.buttonText }]}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </ScrollView>
     </SafeAreaView>
   );
 }
-
-const estilos = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f6f6f6", alignItems: "center" },
-  fundoCabecalho: {
-    backgroundColor: "#72B096",
-    height: 140,
-    width: "100%",
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  wrapperImagemPerfil: {
-    marginTop: -50,
-    borderRadius: 100,
-    padding: 4,
-    backgroundColor: "#fff",
-  },
-  imagemPerfil: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  cartao: {
-    backgroundColor: "#fff",
-    width: "85%",
-    borderRadius: 16,
-    marginTop: 20,
-    paddingVertical: 10,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-  },
-  linha: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderBottomColor: "#eee",
-    borderBottomWidth: 1,
-  },
-  icone: { fontSize: 18, marginRight: 16 },
-  texto: { fontSize: 16, color: "#333" },
-
-  // Modal
-  overlayModal: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  cardModal: {
-    width: "90%",
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
-    paddingTop: 40,
-    position: "relative",
-  },
-  fecharVerde: {
-    position: "absolute",
-    top: -15,
-    left: -15,
-    backgroundColor: "#72B096",
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 10,
-  },
-  saudacao: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "left",
-  },
-  campo: { marginBottom: 16 },
-  label: { fontSize: 12, color: "#999" },
-  linhaInput: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    paddingVertical: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: "#333",
-  },
-  inputAtivo: {
-    borderBottomColor: "#72B096",
-    fontWeight: "bold",
-  },
-  cardModal: {
-    width: "80%",
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 20,
-    paddingTop: 30,
-    position: "relative",
-    alignItems: "center",
-  },
-  saudacao: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  campo: {
-    marginBottom: 16,
-    width: "100%",
-  },
-});
