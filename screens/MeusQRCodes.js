@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import supabase from '../api/supabaseClient';
@@ -18,13 +19,27 @@ export default function MeusQRCodes({ navigation }) {
             const { data, error } = await supabase
                 .from('ferramentas')
                 .select('*')
-                .eq('adicionado_por', user?.id || 1)
                 .order('data_criacao', { ascending: false });
             if (!error) setFerramentas(data || []);
             setLoading(false);
         }
         fetchFerramentas();
     }, [user]);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            let isActive = true;
+            const reload = async () => {
+                const { data, error } = await supabase
+                    .from('ferramentas')
+                    .select('*')
+                    .order('data_criacao', { ascending: false });
+                if (!error && isActive) setFerramentas(data || []);
+            };
+            reload();
+            return () => { isActive = false; };
+        }, [])
+    );
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -44,7 +59,11 @@ export default function MeusQRCodes({ navigation }) {
                     {ferramentas.map(ferramenta => (
                         <View style={[styles.qrItem, { backgroundColor: theme.card }]} key={ferramenta.id}>
                             <Text style={[styles.nome, { color: theme.text }]} numberOfLines={2}>{ferramenta.nome}</Text>
-                            <QRCode value={ferramenta.qrcode_url || 'none'} size={110} backgroundColor="transparent" />
+                            <QRCode
+                                value={ferramenta.qrcode_url || 'none'}
+                                size={130}
+                                backgroundColor="transparent"
+                            />
                             <Text style={[styles.qrValue, { color: theme.text, opacity: 0.32, fontSize: 10, marginTop: 8 }]} numberOfLines={1}>{ferramenta.qrcode_url}</Text>
                         </View>
                     ))}
@@ -61,7 +80,7 @@ const styles = StyleSheet.create({
     title: { fontWeight: '700', fontSize: 23, marginLeft: 8 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 48 },
     qrList: { flexGrow: 1, alignItems: 'center', paddingBottom: 32 },
-    qrItem: { alignItems: 'center', justifyContent: 'center', width: 180, marginBottom: 26, borderRadius: 18, padding: 22, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 2 },
+    qrItem: { alignItems: 'center', justifyContent: 'center', width: 200, marginBottom: 26, borderRadius: 18, padding: 22, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 2 },
     nome: { fontSize: 17, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
     qrValue: { marginTop: 4, textAlign: 'center' }
 });

@@ -134,9 +134,14 @@ const HomeScreen = () => {
             <Text style={[estilos.saudacao, { color: theme.text }]}>{saudacao} 👋</Text>
             <Text style={[estilos.nomeUsuario, { color: theme.text }]} numberOfLines={1}>{user?.nome || "Usuário"}</Text>
           </View>
-          <TouchableOpacity style={[estilos.qrButton, { backgroundColor: theme.primary + '20' }]} onPress={() => navigation.navigate('Ler QR Code')}>
-            <Ionicons name="qr-code-outline" size={28} color={theme.primary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity style={[estilos.qrButton, { backgroundColor: theme.primary + '20' }]} onPress={() => navigation.navigate('Dashboard')}>
+              <Ionicons name="analytics-outline" size={28} color={theme.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={[estilos.qrButton, { backgroundColor: theme.primary + '20' }]} onPress={() => navigation.navigate('Ler QR Code')}>
+              <Ionicons name="qr-code-outline" size={28} color={theme.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 

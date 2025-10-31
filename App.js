@@ -15,6 +15,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import AdicionarFerramenta from './screens/AdicionarFerramenta';
 import DetalheFerramenta from './screens/DetalheFerramenta';
 import MeusQRCodes from './screens/MeusQRCodes';
+import Dashboard from './screens/Dashboard';
 
 
 const Stack = createNativeStackNavigator();
@@ -35,6 +36,7 @@ export default function App() {
             <Stack.Screen name="Tabs" component={Tabs} />
             <Stack.Screen name="DetalheFerramenta" component={DetalheFerramenta} />
             <Stack.Screen name="MeusQRCodes" component={MeusQRCodes} />
+            <Stack.Screen name="Dashboard" component={Dashboard} />
           </Stack.Navigator>
         </NavigationContainer>
       </ThemeProvider>

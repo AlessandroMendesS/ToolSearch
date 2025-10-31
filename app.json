@@ -19,13 +19,27 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "O aplicativo precisa de permissão para salvar QR Codes na galeria.",
+          "savePhotosPermission": "Permite que o aplicativo salve QR Codes na galeria.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
     ]
   }
 }

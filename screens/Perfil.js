@@ -11,6 +11,8 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
+  BackHandler,
+  Platform,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
@@ -83,6 +85,12 @@ export default function TelaPerfil({ navigation }) {
 
   const handleLogout = async () => {
     await logout();
+    if (Platform.OS === 'android') {
+      BackHandler.exitApp();
+    } else {
+      // iOS não permite sair programaticamente; como fallback, poderíamos navegar para a tela inicial do app
+      // navigation.reset({ index: 0, routes: [{ name: 'Inicial' }] });
+    }
   };
 
   const renderInfoLinha = (icone, placeholder, valor, campo) => (
@@ -140,6 +148,7 @@ export default function TelaPerfil({ navigation }) {
         </View>
         <View style={[estilos.card, { backgroundColor: theme.card }]}>
           <Text style={[estilos.cardTitle, { color: theme.text }]}>Configurações</Text>
+          {renderBotao("analytics", "Dashboard & Analytics", () => navigation.navigate("Dashboard"))}
           {renderBotao("color-palette-outline", "Temas", () => navigation.navigate("Temas"))}
           {renderBotao("language-outline", "Linguagem", () => navigation.navigate("Linguagens"))}
           {renderBotao("qr-code-outline", "Meus QR Codes", () => navigation.navigate("MeusQRCodes"))}
