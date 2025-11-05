@@ -7,6 +7,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import supabase from '../api/supabaseClient';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 // Grupos de ferramentas com todos os que existem no AdicionarFerramenta.js
 const grupos = [
@@ -20,6 +21,7 @@ const grupos = [
 
 export default function TelaPesquisarFerramentas({ navigation }) {
   const { theme } = useTheme();
+  const { user } = useAuth();
   const [grupoSelecionado, setGrupoSelecionado] = useState(null);
   const [busca, setBusca] = useState('');
   const [ferramentas, setFerramentas] = useState([]);
@@ -163,23 +165,25 @@ export default function TelaPesquisarFerramentas({ navigation }) {
   const mostrarResultadosBusca = busca.trim();
   const mostrarFerramentasGrupo = !busca.trim() && grupoSelecionado;
 
+  const hora = new Date().getHours();
+  let saudacao = '';
+  if (hora < 12) saudacao = 'Bom Dia!';
+  else if (hora < 18) saudacao = 'Boa Tarde!';
+  else saudacao = 'Boa Noite!';
+
   const ListHeader = () => (
     <View>
-      <Text style={[styles.title, { color: theme.primary }]}>Pesquisar</Text>
-      <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
-        <Ionicons name="search-outline" size={22} color={theme.text} style={styles.searchIcon} />
-        <TextInput
-          style={[styles.searchInput, { color: theme.text }]}
-          placeholder="Pesquisar ferramentas..."
-          placeholderTextColor={theme.text + '80'}
-          value={busca}
-          onChangeText={(text) => setBusca(text)}
-        />
-        {busca.trim() !== '' && (
-          <TouchableOpacity onPress={() => setBusca('')} style={styles.clearSearchButton}>
-            <Ionicons name="close-circle-outline" size={22} color={theme.text} />
-          </TouchableOpacity>
-        )}
+      <View style={[styles.topo, { backgroundColor: theme.background }]}>
+        <View style={styles.row}>
+          <Image
+            source={user?.imagemPerfil ? { uri: user.imagemPerfil } : require('../assets/img/perfil.png')}
+            style={styles.fotoPerfil}
+          />
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={[styles.saudacao, { color: theme.text }]}>{saudacao} 👋</Text>
+            <Text style={[styles.nomeUsuario, { color: theme.text }]} numberOfLines={1}>{user?.nome || 'Usuário'}</Text>
+          </View>
+        </View>
       </View>
       {(mostrarFerramentasGrupo || mostrarResultadosBusca) && (
         <TouchableOpacity
@@ -253,40 +257,31 @@ const styles = StyleSheet.create({
     // flex: 1, // Remover o flex:1 daqui pois já estará na SafeAreaView
     backgroundColor: '#e6f4ea', // Fundo verde bem claro
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2f855a', // Verde escuro para o título
-    textAlign: 'center',
-    marginVertical: 15,
+  topo: {
     paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 12,
+    backgroundColor: '#FFF',
   },
-  searchContainer: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    borderRadius: 25, // Mais arredondado
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
   },
-  searchIcon: {
-    marginRight: 10,
+  fotoPerfil: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#2d3748',
-    paddingVertical: 4, // Ajuste para melhor alinhamento vertical
+  saudacao: {
+    fontSize: 15,
+    color: '#4A5568',
+    fontWeight: '500',
   },
-  clearSearchButton: {
-    padding: 5,
+  nomeUsuario: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#1A202C',
+    marginTop: 1,
   },
   botaoVoltarCategorias: {
     flexDirection: 'row',

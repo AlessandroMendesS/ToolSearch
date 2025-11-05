@@ -10,6 +10,7 @@ import TelaPesquisarFerramentas from './screens/TelaPesquisarFerramentas';
 import LerQRCodes from './screens/LerQRCodes';
 import TelaTemas from './screens/TelaTemas';
 import { useTheme } from './context/ThemeContext';
+import Dashboard from './screens/Dashboard';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -27,21 +28,21 @@ function Tabs() {
     >
       <Tab.Screen
         name="Início"
-        component={TelaInicial}
+        component={TelaPesquisarFerramentas}
         options={{
           tabBarIcon: ({ focused }) => (
             <Ionicons name={focused ? "home" : "home-outline"} size={26} color={focused ? theme.primary : theme.text} />
           ),
+          unmountOnBlur: true
         }}
       />
       <Tab.Screen
-        name="Buscar"
-        component={TelaPesquisarFerramentas}
+        name="Home"
+        component={Dashboard}
         options={{
           tabBarIcon: ({ focused }) => (
-            <Ionicons name={focused ? "search" : "search-outline"} size={26} color={focused ? theme.primary : theme.text} />
+            <Ionicons name={focused ? "analytics" : "analytics-outline"} size={26} color={focused ? theme.primary : theme.text} />
           ),
-          unmountOnBlur: true
         }}
       />
       <Tab.Screen
