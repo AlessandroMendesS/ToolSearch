@@ -9,7 +9,6 @@ import TelaCadastro from './screens/TelaCadastro';
 import TelaLogin from './screens/TelaLogin';
 import Tabs from './Navigation';
 import TelaTemas from './screens/TelaTemas';
-import TelaLinguagens from './screens/TelaLinguagens';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import AdicionarFerramenta from './screens/AdicionarFerramenta';
@@ -31,7 +30,6 @@ export default function App() {
             <Stack.Screen name="Cadastro" component={TelaCadastro} />
             <Stack.Screen name="Login" component={TelaLogin} />
             <Stack.Screen name="Temas" component={TelaTemas} />
-            <Stack.Screen name="Linguagens" component={TelaLinguagens} />
             <Stack.Screen name="AdicionarFerramenta" component={AdicionarFerramenta} />
             <Stack.Screen name="Tabs" component={Tabs} />
             <Stack.Screen name="DetalheFerramenta" component={DetalheFerramenta} />

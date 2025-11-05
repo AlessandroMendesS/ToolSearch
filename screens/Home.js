@@ -126,10 +126,12 @@ const HomeScreen = () => {
       <StatusBar translucent backgroundColor="transparent" barStyle={theme.dark ? "light-content" : "dark-content"} />
       <View style={[estilos.topo, { backgroundColor: theme.background }]}>
         <View style={estilos.row}>
-          <Image
-            source={imagemPerfil ? { uri: imagemPerfil } : require("../assets/img/perfil.png")}
-            style={estilos.fotoPerfil}
-          />
+          <View style={[estilos.fotoPerfilContainer, { borderColor: theme.primary }]}>
+            <Image
+              source={imagemPerfil ? { uri: imagemPerfil } : require("../assets/img/perfil.png")}
+              style={estilos.fotoPerfil}
+            />
+          </View>
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={[estilos.saudacao, { color: theme.text }]}>{saudacao} 👋</Text>
             <Text style={[estilos.nomeUsuario, { color: theme.text }]} numberOfLines={1}>{user?.nome || "Usuário"}</Text>
@@ -286,12 +288,19 @@ const estilos = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
+  fotoPerfilContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2,
+    padding: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   fotoPerfil: {
-    width: 48, // Mantido
-    height: 48, // Mantido
+    width: 48,
+    height: 48,
     borderRadius: 24,
-    // borderWidth: 2, // Removida borda da foto de perfil para ficar como na imagem
-    // borderColor: "#38a169",
   },
   saudacao: {
     fontSize: 15, // Ajustado

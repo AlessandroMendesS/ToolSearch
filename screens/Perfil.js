@@ -116,16 +116,19 @@ export default function TelaPerfil({ navigation }) {
 
   return (
     <SafeAreaView style={[estilos.container, { backgroundColor: theme.background, flex: 1 }]}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.background} />
-        <View style={estilos.header}>
-          <TouchableOpacity onPress={escolherImagem} style={estilos.profileImageContainer}>
+      <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.background} />
+      <ScrollView 
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[estilos.header, { backgroundColor: theme.primary }]}>
+          <TouchableOpacity onPress={escolherImagem} style={[estilos.profileImageContainer, { borderColor: theme.background }]}>
             <Image
               source={user?.imagemPerfil ? { uri: user.imagemPerfil } : require("../assets/img/perfil.png")}
               style={estilos.profileImage}
             />
           </TouchableOpacity>
-          <Text style={[estilos.userName, { color: theme.text }]}>{
+          <Text style={[estilos.userName, { color: theme.buttonText || '#fff' }]}>{
             typeof user?.nome === "string" ? user.nome : "Nome do Usuário"
           }</Text>
         </View>
@@ -150,7 +153,6 @@ export default function TelaPerfil({ navigation }) {
           <Text style={[estilos.cardTitle, { color: theme.text }]}>Configurações</Text>
           {renderBotao("analytics", "Dashboard & Analytics", () => navigation.navigate("Dashboard"))}
           {renderBotao("color-palette-outline", "Temas", () => navigation.navigate("Temas"))}
-          {renderBotao("language-outline", "Linguagem", () => navigation.navigate("Linguagens"))}
           {renderBotao("qr-code-outline", "Meus QR Codes", () => navigation.navigate("MeusQRCodes"))}
         </View>
         <View style={[estilos.card, { backgroundColor: theme.card }]}>

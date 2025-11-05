@@ -6,7 +6,6 @@ export const estilos = StyleSheet.create({
     backgroundColor: "#f2f2f2",
   },
   header: {
-    backgroundColor: "#2c3e50",
     paddingVertical: 40,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 20,
@@ -17,7 +16,6 @@ export const estilos = StyleSheet.create({
   profileImageContainer: {
     marginBottom: 15,
     borderWidth: 3,
-    borderColor: "#fff",
     borderRadius: 75,
     padding: 5,
   },

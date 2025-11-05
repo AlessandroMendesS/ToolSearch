@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Image,
   SafeAreaView, StatusBar, FlatList, ActivityIndicator,
-  Animated, Easing // Adicionar Animated
+  Animated, Easing, Platform // Adicionar Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import supabase from '../api/supabaseClient';
@@ -175,10 +175,12 @@ export default function TelaPesquisarFerramentas({ navigation }) {
     <View>
       <View style={[styles.topo, { backgroundColor: theme.background }]}>
         <View style={styles.row}>
-          <Image
-            source={user?.imagemPerfil ? { uri: user.imagemPerfil } : require('../assets/img/perfil.png')}
-            style={styles.fotoPerfil}
-          />
+          <View style={[styles.fotoPerfilContainer, { borderColor: theme.primary }]}>
+            <Image
+              source={user?.imagemPerfil ? { uri: user.imagemPerfil } : require('../assets/img/perfil.png')}
+              style={styles.fotoPerfil}
+            />
+          </View>
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={[styles.saudacao, { color: theme.text }]}>{saudacao} 👋</Text>
             <Text style={[styles.nomeUsuario, { color: theme.text }]} numberOfLines={1}>{user?.nome || 'Usuário'}</Text>
@@ -259,12 +261,21 @@ const styles = StyleSheet.create({
   },
   topo: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: Platform.OS === 'android' ? ((StatusBar.currentHeight || 0) + 8) : 20,
     paddingBottom: 12,
     backgroundColor: '#FFF',
   },
   row: {
     flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fotoPerfilContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2,
+    padding: 2,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   fotoPerfil: {
@@ -299,7 +310,7 @@ const styles = StyleSheet.create({
   },
   listContentContainer: {
     paddingHorizontal: 10, // Espaço nas laterais da lista
-    paddingBottom: 20,
+    paddingBottom: 100, // Aumentado para não cortar itens no Android
   },
   // Estilos para Categoria Card
   categoriaCard: {

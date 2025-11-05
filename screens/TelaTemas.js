@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 
@@ -41,10 +41,12 @@ export default function TelaTemas({ navigation }) {
   );
 
   return (
-    <View style={[estilos.container, { backgroundColor: theme.background }]}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={estilos.botaoVoltar}>
-        <Ionicons name="arrow-back" size={24} color={theme.text} />
-      </TouchableOpacity>
+    <SafeAreaView style={[estilos.container, { backgroundColor: theme.background, flex: 1 }]}>
+      <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.background} />
+      <View style={[estilos.content, { backgroundColor: theme.background }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={estilos.botaoVoltar}>
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
+        </TouchableOpacity>
 
       <Text style={[estilos.titulo, { color: theme.text }]}>Temas</Text>
       <Text style={[estilos.subtitulo, { color: theme.text }]}>
@@ -55,17 +57,23 @@ export default function TelaTemas({ navigation }) {
         {renderOpcaoTema("claro", "sunny-outline")}
         {renderOpcaoTema("escuro", "moon-outline")}
       </View>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const estilos = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  content: {
+    flex: 1,
     padding: 20,
+    paddingTop: Platform.OS === 'android' ? ((StatusBar.currentHeight || 0) + 8) : 0,
   },
   botaoVoltar: {
     marginBottom: 20,
+    paddingTop: Platform.OS === 'android' ? 0 : 0,
   },
   titulo: {
     fontSize: 24,

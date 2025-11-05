@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
-  RefreshControl
+  RefreshControl,
+  Platform
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -463,7 +464,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingVertical: 12,
+    paddingTop: Platform.OS === 'android' ? ((StatusBar.currentHeight || 0) + 8) : 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -488,7 +490,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 15,
-    paddingBottom: 30,
+    paddingBottom: 100, // Aumentado para não cortar o bloco de recomendações
   },
   statsGrid: {
     flexDirection: 'row',

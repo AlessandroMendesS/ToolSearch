@@ -4,6 +4,8 @@ export const lightTheme = {
   text: '#000000',
   card: '#ffffff',
   border: '#ddd',
+  buttonText: '#ffffff',
+  dark: false,
 };
 
 export const darkTheme = {
@@ -12,4 +14,6 @@ export const darkTheme = {
   text: '#ffffff',
   card: '#1e1e1e',
   border: '#333',
+  buttonText: '#ffffff',
+  dark: true,
 };

@@ -23,6 +23,9 @@ function Tabs() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
+        tabBarHideOnKeyboard: true,
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.text,
         tabBarStyle: { ...estilos.bottomBar, backgroundColor: theme.card },
       }}
     >
@@ -50,7 +53,7 @@ function Tabs() {
         component={TelaLeituraCodigoBarras}
         options={{
           tabBarIcon: ({ focused }) => (
-            <Ionicons name={focused ? "add-circle" : "add-circle-outline"} size={32} color={focused ? theme.primary : theme.text} />
+            <Ionicons name={focused ? "add" : "add-outline"} size={26} color={focused ? theme.primary : theme.text} />
           ),
         }}
       />
@@ -88,19 +91,19 @@ export default function AppNavigator() {
 const estilos = StyleSheet.create({
   bottomBar: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 64,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
+    bottom: 16,
+    left: 16,
+    right: 16,
+    height: 68,
+    borderRadius: 22,
     borderTopWidth: 0,
-    elevation: 10,
+    elevation: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    paddingVertical: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
     zIndex: 10,
   },
 });
