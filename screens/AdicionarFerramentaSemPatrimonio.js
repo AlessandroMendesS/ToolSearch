@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image, TextInput, Modal, FlatList, Alert,
   ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar
 } from 'react-native';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { decode as atob } from 'base-64';
@@ -37,7 +37,7 @@ const InputField = ({ icon, placeholder, value, onChangeText, keyboardType = 'de
   </View>
 );
 
-export default function AdicionarFerramenta() {
+export default function AdicionarFerramentaSemPatrimonio() {
   const navigation = useNavigation();
   const { user } = useAuth();
 
@@ -45,7 +45,6 @@ export default function AdicionarFerramenta() {
   const [nome, setNome] = useState('');
   const [detalhes, setDetalhes] = useState('');
   const [local, setLocal] = useState('');
-  const [patrimonio, setPatrimonio] = useState('');
   const [quantidade, setQuantidade] = useState('1');
   const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -130,18 +129,22 @@ export default function AdicionarFerramenta() {
   };
 
   const validarFormulario = () => {
-    if (!nome.trim()) { Alert.alert('Campo Obrigatório', 'Por favor, insira o nome da ferramenta.'); return false; }
-    if (!patrimonio.trim()) { Alert.alert('Campo Obrigatório', 'Insira o número de patrimônio inicial.'); return false; }
-    if (!local.trim()) { Alert.alert('Campo Obrigatório', 'Insira o local de armazenamento.'); return false; }
-    if (!categoriaSelecionada) { Alert.alert('Campo Obrigatório', 'Selecione uma categoria.'); return false; }
-  
+    if (!nome.trim()) { 
+      Alert.alert('Campo Obrigatório', 'Por favor, insira o nome da ferramenta.'); 
+      return false; 
+    }
+    if (!local.trim()) { 
+      Alert.alert('Campo Obrigatório', 'Insira o local de armazenamento.'); 
+      return false; 
+    }
+    if (!categoriaSelecionada) { 
+      Alert.alert('Campo Obrigatório', 'Selecione uma categoria.'); 
+      return false; 
+    }
+    
     const qtd = parseInt(quantidade) || 0;
     if (qtd < 1) { Alert.alert('Quantidade Inválida', 'A quantidade deve ser pelo menos 1.'); return false; }
     if (qtd > 100) { Alert.alert('Quantidade Inválida', 'A quantidade máxima é 100 por vez.'); return false; }
-    
-    // Verificar se o patrimônio inicial é numérico
-    const patrimonioInicial = parseInt(patrimonio);
-    if (isNaN(patrimonioInicial)) { Alert.alert('Patrimônio Inválido', 'O número de patrimônio deve ser numérico.'); return false; }
     
     return true;
   };
@@ -150,11 +153,18 @@ export default function AdicionarFerramenta() {
     navigation.goBack();
   };
 
+  // Gerar um patrimônio único baseado em timestamp e random
+  // Para ferramentas sem patrimônio, o valor será "SEM PATRIMONIO" com sufixo único
+  const gerarPatrimonioUnico = () => {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 10000);
+    return `SEM PATRIMONIO-${timestamp}-${random}`;
+  };
+
   const handleSubmit = async () => {
     if (!validarFormulario()) return;
     
     const qtd = parseInt(quantidade) || 1;
-    const patrimonioInicial = parseInt(patrimonio);
     
     setLoading(true);
     setProgresso({ atual: 0, total: qtd });
@@ -205,19 +215,19 @@ export default function AdicionarFerramenta() {
       }
     }
 
-    // Criar array de ferramentas com patrimônios sequenciais
+    // Criar array de ferramentas com patrimônios únicos
     const ferramentasParaCriar = [];
     for (let i = 0; i < qtd; i++) {
-      const patrimonioAtual = (patrimonioInicial + i).toString();
+      const patrimonioUnico = gerarPatrimonioUnico();
       ferramentasParaCriar.push({
         nome,
-        patrimonio: patrimonioAtual,
+        patrimonio: patrimonioUnico,
         detalhes,
         local,
         categoria_id: categoriaSelecionada.id,
         categoria_nome: categoriaSelecionada.nome,
         imagem_url: imagemUrlSupabase,
-        qrcode_url: `tool-${patrimonioAtual}-${Date.now()}-${i}`,
+        qrcode_url: `tool-${patrimonioUnico}-${Date.now()}-${i}`,
         disponivel: true,
         adicionado_por: user?.id || 1,
       });
@@ -233,62 +243,25 @@ export default function AdicionarFerramenta() {
         .select();
 
       if (error) {
-        // Se houver erro de duplicação ou outro, tentar inserir uma por uma
-        console.warn('Erro ao inserir em lote, tentando uma por uma:', error);
-        
-        let sucessos = 0;
-        let erros = 0;
-        
-        for (let i = 0; i < ferramentasParaCriar.length; i++) {
-          setProgresso({ atual: i + 1, total: qtd });
-          
-          try {
-            const { error: singleError } = await supabase
-              .from('ferramentas')
-              .insert([ferramentasParaCriar[i]])
-              .select();
-            
-            if (singleError) {
-              console.error(`Erro ao inserir ferramenta ${i + 1}:`, singleError);
-              erros++;
-            } else {
-              sucessos++;
-            }
-          } catch (singleErr) {
-            console.error(`Erro ao inserir ferramenta ${i + 1}:`, singleErr);
-            erros++;
-          }
-        }
-        
-        if (sucessos > 0) {
-          Alert.alert(
-            'Sucesso Parcial', 
-            `${sucessos} ferramenta(s) cadastrada(s) com sucesso.${erros > 0 ? ` ${erros} falharam.` : ''}`,
-            [{ text: 'OK', onPress: handleVoltar }]
-          );
-        } else {
-          Alert.alert('Erro', 'Não foi possível cadastrar nenhuma ferramenta. Verifique os números de patrimônio.');
-        }
-      } else {
-        // Sucesso total
-        Alert.alert(
-          'Sucesso!', 
-          `${qtd} ferramenta(s) cadastrada(s) com sucesso.`,
-          [{ text: 'OK', onPress: handleVoltar }]
-        );
+        throw error;
       }
+
+      Alert.alert(
+        'Sucesso!', 
+        `${qtd} ferramenta${qtd > 1 ? 's' : ''} cadastrada${qtd > 1 ? 's' : ''} com sucesso.`,
+        [{ text: 'OK', onPress: handleVoltar }]
+      );
       
       // Limpar formulário
       setImagem(null); 
       setNome(''); 
-      setPatrimonio(''); 
       setDetalhes(''); 
       setLocal(''); 
-      setCategoriaSelecionada(null);
       setQuantidade('1');
+      setCategoriaSelecionada(null);
     } catch (error) {
-      console.error('Erro ao salvar ferramentas no DB:', error);
-      Alert.alert('Erro ao Salvar', 'Não foi possível salvar as ferramentas no banco de dados: ' + error.message);
+      console.error('Erro ao salvar ferramenta no DB:', error);
+      Alert.alert('Erro ao Salvar', 'Não foi possível salvar a ferramenta no banco de dados: ' + error.message);
     } finally {
       setLoading(false);
       setProgresso({ atual: 0, total: 0 });
@@ -322,7 +295,14 @@ export default function AdicionarFerramenta() {
           </TouchableOpacity>
 
           <InputField icon="hammer-outline" placeholder="Nome da Ferramenta" value={nome} onChangeText={setNome} />
-          <InputField icon="document-text-outline" placeholder="Nº de Patrimônio Inicial" value={patrimonio} onChangeText={setPatrimonio} keyboardType="numeric" />
+          
+          <View style={styles.infoBox}>
+            <Ionicons name="information-circle-outline" size={20} color="#38A169" />
+            <Text style={styles.infoText}>
+              Um número de patrimônio será gerado automaticamente para esta ferramenta.
+            </Text>
+          </View>
+
           <InputField icon="copy-outline" placeholder="Quantidade (padrão: 1)" value={quantidade} onChangeText={(text) => {
             // Permitir apenas números e permitir campo vazio
             const num = text.replace(/[^0-9]/g, '');
@@ -333,7 +313,7 @@ export default function AdicionarFerramenta() {
             <View style={styles.infoBox}>
               <Ionicons name="information-circle-outline" size={20} color="#38A169" />
               <Text style={styles.infoText}>
-                {`Serão criadas ${quantidade} ferramentas com patrimônios de ${patrimonio || '?'} até ${(parseInt(patrimonio) || 0) + parseInt(quantidade) - 1}`}
+                {`Serão criadas ${quantidade} ferramentas com patrimônios únicos gerados automaticamente.`}
               </Text>
             </View>
           )}
@@ -445,7 +425,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   backButton: {
-    padding: 5, // Aumentar área de toque
+    padding: 5,
   },
   headerTitle: {
     fontSize: 22,
@@ -455,7 +435,7 @@ const styles = StyleSheet.create({
   },
   imagePicker: {
     height: 180,
-    backgroundColor: '#E8F5E9', // Verde bem claro
+    backgroundColor: '#E8F5E9',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -467,7 +447,7 @@ const styles = StyleSheet.create({
   imagePreview: {
     width: '100%',
     height: '100%',
-    borderRadius: 10, // Um pouco menos que o container para não cortar bordas
+    borderRadius: 10,
   },
   imagePlaceholder: {
     justifyContent: 'center',
@@ -488,7 +468,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     paddingHorizontal: 15,
     marginBottom: 15,
-    minHeight: 55, // Altura mínima
+    minHeight: 55,
   },
   inputIcon: {
     marginRight: 10,
@@ -497,10 +477,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#2D3748',
-    paddingVertical: 12, // Ajustar padding interno
+    paddingVertical: 12,
   },
   submitButton: {
-    backgroundColor: '#38A169', // Verde principal
+    backgroundColor: '#38A169',
     borderRadius: 10,
     paddingVertical: 15,
     alignItems: 'center',
@@ -519,19 +499,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  // Estilos do Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'flex-end', // Alinha o modal na parte inferior
+    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
     paddingTop: 20,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 20, // Padding inferior para safe area no iOS
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '60%', // Limita a altura do modal
+    maxHeight: '60%',
   },
   imageModalContent: {
     maxHeight: '40%',
@@ -554,46 +533,6 @@ const styles = StyleSheet.create({
   modalItemText: {
     fontSize: 16,
     color: '#333',
-  },
-  imageOptionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 25,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  imageOptionText: {
-    fontSize: 17,
-    color: '#333',
-    marginLeft: 15,
-  },
-  modalCloseButton: {
-    marginTop: 10,
-    padding: 15,
-    alignItems: 'center',
-  },
-  modalCloseButtonText: {
-    fontSize: 16,
-    color: '#E53E3E', // Vermelho para fechar/cancelar
-    fontWeight: '500',
-  },
-  infoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
-    borderLeftWidth: 3,
-    borderLeftColor: '#38A169',
-  },
-  infoText: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 14,
-    color: '#2D3748',
-    lineHeight: 20,
   },
   progressBox: {
     marginBottom: 15,
@@ -620,4 +559,45 @@ const styles = StyleSheet.create({
     backgroundColor: '#38A169',
     borderRadius: 4,
   },
+  imageOptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 18,
+    paddingHorizontal: 25,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  imageOptionText: {
+    fontSize: 17,
+    color: '#333',
+    marginLeft: 15,
+  },
+  modalCloseButton: {
+    marginTop: 10,
+    padding: 15,
+    alignItems: 'center',
+  },
+  modalCloseButtonText: {
+    fontSize: 16,
+    color: '#E53E3E',
+    fontWeight: '500',
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    borderLeftWidth: 3,
+    borderLeftColor: '#38A169',
+  },
+  infoText: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 14,
+    color: '#2D3748',
+    lineHeight: 20,
+  },
 });
+

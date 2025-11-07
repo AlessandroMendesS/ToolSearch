@@ -7,7 +7,11 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build:android": "eas build --platform android --profile preview",
+    "build:android:prod": "eas build --platform android --profile production",
+    "build:ios": "eas build --platform ios --profile preview",
+    "build:ios:prod": "eas build --platform ios --profile production"
   },
   "dependencies": {
     "@expo/metro-runtime": "^6.1.2",
@@ -25,9 +29,7 @@
     "expo-file-system": "~19.0.17",
     "expo-image-picker": "^17.0.8",
     "expo-localization": "^17.0.7",
-    "expo-mail-composer": "^15.0.7",
-    "expo-media-library": "~18.2.0",
-    "expo-sharing": "^14.0.7",
+    "expo-media-library": "^18.2.0",
     "expo-status-bar": "^3.0.8",
     "i18n-js": "^4.5.1",
     "react": "^19.1.0",
@@ -48,9 +50,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
-    "@react-native-community/cli": "^18.0.0",
-    "@types/ws": "^8.18.1",
-    "nodemon": "^3.1.10"
+    "@react-native-community/cli": "^18.0.0"
   },
   "resolutions": {
     "ws": "8.17.1"

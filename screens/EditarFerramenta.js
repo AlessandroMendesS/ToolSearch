@@ -3,12 +3,11 @@ import {
   View, Text, StyleSheet, TouchableOpacity, Image, TextInput, Modal, FlatList, Alert,
   ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar
 } from 'react-native';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { decode as atob } from 'base-64';
-import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import supabase from '../api/supabaseClient';
 
 const categoriasLista = [
@@ -37,24 +36,24 @@ const InputField = ({ icon, placeholder, value, onChangeText, keyboardType = 'de
   </View>
 );
 
-export default function AdicionarFerramenta() {
-  const navigation = useNavigation();
-  const { user } = useAuth();
+export default function EditarFerramenta({ route, navigation }) {
+  const { ferramenta: ferramentaInicial } = route.params;
+  const { theme } = useTheme();
 
-  const [imagem, setImagem] = useState(null);
-  const [nome, setNome] = useState('');
-  const [detalhes, setDetalhes] = useState('');
-  const [local, setLocal] = useState('');
-  const [patrimonio, setPatrimonio] = useState('');
-  const [quantidade, setQuantidade] = useState('1');
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
+  const [imagem, setImagem] = useState(ferramentaInicial.imagem_url || null);
+  const [imagemNova, setImagemNova] = useState(null); // Nova imagem selecionada
+  const [nome, setNome] = useState(ferramentaInicial.nome || '');
+  const [detalhes, setDetalhes] = useState(ferramentaInicial.detalhes || '');
+  const [local, setLocal] = useState(ferramentaInicial.local || '');
+  const [patrimonio, setPatrimonio] = useState(ferramentaInicial.patrimonio || '');
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState(
+    categoriasLista.find(cat => cat.id === ferramentaInicial.categoria_id) || null
+  );
   const [loading, setLoading] = useState(false);
-  const [progresso, setProgresso] = useState({ atual: 0, total: 0 });
 
   const [categoriaModalVisivel, setCategoriaModalVisivel] = useState(false);
   const [imagemModalVisivel, setImagemModalVisivel] = useState(false);
 
-  // Compatibilidade entre versões do expo-image-picker
   const MEDIA_IMAGES = (ImagePicker && ImagePicker.MediaType && (ImagePicker.MediaType.Images || ImagePicker.MediaType.Image))
     || (ImagePicker && ImagePicker.MediaTypeOptions && ImagePicker.MediaTypeOptions.Images);
 
@@ -62,8 +61,8 @@ export default function AdicionarFerramenta() {
     try {
       const base = (name || 'imagem')
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') 
-        .replace(/[^a-zA-Z0-9._-]/g, '_') 
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9._-]/g, '_')
         .toLowerCase();
       return base.length > 0 ? base : `img`;
     } catch (e) {
@@ -92,6 +91,7 @@ export default function AdicionarFerramenta() {
       setImagemModalVisivel(false);
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImagemNova(result.assets[0].uri);
         setImagem(result.assets[0].uri);
       }
     } catch (error) {
@@ -121,6 +121,7 @@ export default function AdicionarFerramenta() {
       setImagemModalVisivel(false);
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImagemNova(result.assets[0].uri);
         setImagem(result.assets[0].uri);
       }
     } catch (error) {
@@ -131,18 +132,9 @@ export default function AdicionarFerramenta() {
 
   const validarFormulario = () => {
     if (!nome.trim()) { Alert.alert('Campo Obrigatório', 'Por favor, insira o nome da ferramenta.'); return false; }
-    if (!patrimonio.trim()) { Alert.alert('Campo Obrigatório', 'Insira o número de patrimônio inicial.'); return false; }
+    if (!patrimonio.trim()) { Alert.alert('Campo Obrigatório', 'Insira o número de patrimônio.'); return false; }
     if (!local.trim()) { Alert.alert('Campo Obrigatório', 'Insira o local de armazenamento.'); return false; }
     if (!categoriaSelecionada) { Alert.alert('Campo Obrigatório', 'Selecione uma categoria.'); return false; }
-  
-    const qtd = parseInt(quantidade) || 0;
-    if (qtd < 1) { Alert.alert('Quantidade Inválida', 'A quantidade deve ser pelo menos 1.'); return false; }
-    if (qtd > 100) { Alert.alert('Quantidade Inválida', 'A quantidade máxima é 100 por vez.'); return false; }
-    
-    // Verificar se o patrimônio inicial é numérico
-    const patrimonioInicial = parseInt(patrimonio);
-    if (isNaN(patrimonioInicial)) { Alert.alert('Patrimônio Inválido', 'O número de patrimônio deve ser numérico.'); return false; }
-    
     return true;
   };
 
@@ -152,22 +144,17 @@ export default function AdicionarFerramenta() {
 
   const handleSubmit = async () => {
     if (!validarFormulario()) return;
-    
-    const qtd = parseInt(quantidade) || 1;
-    const patrimonioInicial = parseInt(patrimonio);
-    
     setLoading(true);
-    setProgresso({ atual: 0, total: qtd });
     
-    let imagemUrlSupabase = null;
+    let imagemUrlSupabase = ferramentaInicial.imagem_url; // Manter a imagem atual por padrão
 
-    // Upload da imagem apenas uma vez (se houver)
-    if (imagem) {
+    // Se uma nova imagem foi selecionada, fazer upload
+    if (imagemNova) {
       try {
         const imagemNomeUnico = `${Date.now()}_${sanitizeFileName(nome)}.jpg`;
         
         // Ler arquivo local em base64 e converter para ArrayBuffer
-        const base64 = await FileSystem.readAsStringAsync(imagem, { encoding: 'base64' });
+        const base64 = await FileSystem.readAsStringAsync(imagemNova, { encoding: 'base64' });
         const binary = atob(base64);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -197,107 +184,51 @@ export default function AdicionarFerramenta() {
 
         imagemUrlSupabase = publicUrlData.publicUrl;
       } catch (error) {
-        console.error('Erro detalhado no upload:', error);
-        Alert.alert('Erro no Upload', 'Não foi possível fazer o upload da imagem. Mensagem: ' + error.message);
+        Alert.alert('Erro no Upload', 'Não foi possível fazer o upload da nova imagem. Mensagem: ' + error.message);
         setLoading(false);
-        setProgresso({ atual: 0, total: 0 });
         return;
       }
     }
 
-    // Criar array de ferramentas com patrimônios sequenciais
-    const ferramentasParaCriar = [];
-    for (let i = 0; i < qtd; i++) {
-      const patrimonioAtual = (patrimonioInicial + i).toString();
-      ferramentasParaCriar.push({
-        nome,
-        patrimonio: patrimonioAtual,
-        detalhes,
-        local,
-        categoria_id: categoriaSelecionada.id,
-        categoria_nome: categoriaSelecionada.nome,
-        imagem_url: imagemUrlSupabase,
-        qrcode_url: `tool-${patrimonioAtual}-${Date.now()}-${i}`,
-        disponivel: true,
-        adicionado_por: user?.id || 1,
-      });
-    }
+    const ferramentaAtualizada = {
+      nome,
+      patrimonio,
+      detalhes,
+      local,
+      categoria_id: categoriaSelecionada.id,
+      categoria_nome: categoriaSelecionada.nome,
+      imagem_url: imagemUrlSupabase,
+    };
 
     try {
-      // Inserir todas as ferramentas de uma vez (mais eficiente)
-      setProgresso({ atual: qtd, total: qtd }); // Mostrar progresso completo ao inserir em lote
-      
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('ferramentas')
-        .insert(ferramentasParaCriar)
-        .select();
+        .update(ferramentaAtualizada)
+        .eq('id', ferramentaInicial.id);
 
-      if (error) {
-        // Se houver erro de duplicação ou outro, tentar inserir uma por uma
-        console.warn('Erro ao inserir em lote, tentando uma por uma:', error);
-        
-        let sucessos = 0;
-        let erros = 0;
-        
-        for (let i = 0; i < ferramentasParaCriar.length; i++) {
-          setProgresso({ atual: i + 1, total: qtd });
-          
-          try {
-            const { error: singleError } = await supabase
-              .from('ferramentas')
-              .insert([ferramentasParaCriar[i]])
-              .select();
-            
-            if (singleError) {
-              console.error(`Erro ao inserir ferramenta ${i + 1}:`, singleError);
-              erros++;
-            } else {
-              sucessos++;
-            }
-          } catch (singleErr) {
-            console.error(`Erro ao inserir ferramenta ${i + 1}:`, singleErr);
-            erros++;
+      if (error) throw error;
+
+      Alert.alert('Sucesso!', 'Ferramenta atualizada com sucesso.', [
+        { 
+          text: 'OK', 
+          onPress: () => {
+            // Atualizar a ferramenta na navegação
+            navigation.navigate('DetalheFerramenta', { 
+              ferramenta: { ...ferramentaInicial, ...ferramentaAtualizada } 
+            });
           }
         }
-        
-        if (sucessos > 0) {
-          Alert.alert(
-            'Sucesso Parcial', 
-            `${sucessos} ferramenta(s) cadastrada(s) com sucesso.${erros > 0 ? ` ${erros} falharam.` : ''}`,
-            [{ text: 'OK', onPress: handleVoltar }]
-          );
-        } else {
-          Alert.alert('Erro', 'Não foi possível cadastrar nenhuma ferramenta. Verifique os números de patrimônio.');
-        }
-      } else {
-        // Sucesso total
-        Alert.alert(
-          'Sucesso!', 
-          `${qtd} ferramenta(s) cadastrada(s) com sucesso.`,
-          [{ text: 'OK', onPress: handleVoltar }]
-        );
-      }
-      
-      // Limpar formulário
-      setImagem(null); 
-      setNome(''); 
-      setPatrimonio(''); 
-      setDetalhes(''); 
-      setLocal(''); 
-      setCategoriaSelecionada(null);
-      setQuantidade('1');
+      ]);
     } catch (error) {
-      console.error('Erro ao salvar ferramentas no DB:', error);
-      Alert.alert('Erro ao Salvar', 'Não foi possível salvar as ferramentas no banco de dados: ' + error.message);
+      Alert.alert('Erro ao Salvar', 'Não foi possível atualizar a ferramenta: ' + error.message);
     } finally {
       setLoading(false);
-      setProgresso({ atual: 0, total: 0 });
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F7FAFC" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.background} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
@@ -305,9 +236,9 @@ export default function AdicionarFerramenta() {
         <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <TouchableOpacity onPress={handleVoltar} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={28} color="#38A169" />
+              <Ionicons name="arrow-back" size={28} color={theme.primary} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Nova Ferramenta</Text>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>Editar Ferramenta</Text>
           </View>
 
           <TouchableOpacity style={styles.imagePicker} onPress={() => setImagemModalVisivel(true)}>
@@ -315,56 +246,31 @@ export default function AdicionarFerramenta() {
               <Image source={{ uri: imagem }} style={styles.imagePreview} />
             ) : (
               <View style={styles.imagePlaceholder}>
-                <Ionicons name="camera-outline" size={40} color="#7DA38C" />
-                <Text style={styles.imagePickerText}>Adicionar Foto</Text>
+                <Ionicons name="camera-outline" size={40} color={theme.primary} />
+                <Text style={[styles.imagePickerText, { color: theme.primary }]}>Adicionar Foto</Text>
               </View>
             )}
           </TouchableOpacity>
 
           <InputField icon="hammer-outline" placeholder="Nome da Ferramenta" value={nome} onChangeText={setNome} />
-          <InputField icon="document-text-outline" placeholder="Nº de Patrimônio Inicial" value={patrimonio} onChangeText={setPatrimonio} keyboardType="numeric" />
-          <InputField icon="copy-outline" placeholder="Quantidade (padrão: 1)" value={quantidade} onChangeText={(text) => {
-            // Permitir apenas números e permitir campo vazio
-            const num = text.replace(/[^0-9]/g, '');
-            setQuantidade(num);
-          }} keyboardType="numeric" />
-          
-          {quantidade && parseInt(quantidade) > 1 && (
-            <View style={styles.infoBox}>
-              <Ionicons name="information-circle-outline" size={20} color="#38A169" />
-              <Text style={styles.infoText}>
-                {`Serão criadas ${quantidade} ferramentas com patrimônios de ${patrimonio || '?'} até ${(parseInt(patrimonio) || 0) + parseInt(quantidade) - 1}`}
-              </Text>
-            </View>
-          )}
-          
-          {loading && progresso.total > 0 && (
-            <View style={styles.progressBox}>
-              <Text style={styles.progressText}>
-                Cadastrando {progresso.atual} de {progresso.total}...
-              </Text>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${(progresso.atual / progresso.total) * 100}%` }]} />
-              </View>
-            </View>
-          )}
+          <InputField icon="document-text-outline" placeholder="Nº de Patrimônio" value={patrimonio} onChangeText={setPatrimonio} keyboardType="numeric" />
 
           <TouchableOpacity style={styles.inputContainer} onPress={() => setCategoriaModalVisivel(true)}>
-            <Ionicons name="layers-outline" size={22} color="#7DA38C" style={styles.inputIcon} />
-            <Text style={[styles.input, categoriaSelecionada ? {} : { color: '#A0AEC0' }]}>
+            <Ionicons name="layers-outline" size={22} color={theme.primary} style={styles.inputIcon} />
+            <Text style={[styles.input, categoriaSelecionada ? { color: theme.text } : { color: '#A0AEC0' }]}>
               {categoriaSelecionada ? categoriaSelecionada.nome : 'Selecionar Categoria'}
             </Text>
-            <Ionicons name="chevron-down" size={22} color="#7DA38C" />
+            <Ionicons name="chevron-down" size={22} color={theme.primary} />
           </TouchableOpacity>
 
           <InputField icon="information-circle-outline" placeholder="Detalhes (opcional)" value={detalhes} onChangeText={setDetalhes} multiline numberOfLines={3} />
           <InputField icon="location-outline" placeholder="Local de Armazenamento" value={local} onChangeText={setLocal} />
 
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
+          <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.primary }]} onPress={handleSubmit} disabled={loading}>
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.submitButtonText}>Salvar Ferramenta</Text>
+              <Text style={styles.submitButtonText}>Salvar Alterações</Text>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -378,8 +284,8 @@ export default function AdicionarFerramenta() {
         onRequestClose={() => setCategoriaModalVisivel(false)}
       >
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPressOut={() => setCategoriaModalVisivel(false)}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Selecione a Categoria</Text>
+          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Selecione a Categoria</Text>
             <FlatList
               data={categoriasLista}
               keyExtractor={(item) => item.id}
@@ -388,8 +294,8 @@ export default function AdicionarFerramenta() {
                   style={styles.modalItem}
                   onPress={() => { setCategoriaSelecionada(item); setCategoriaModalVisivel(false); }}
                 >
-                  <Ionicons name={item.icone} size={24} color="#38A169" style={{ marginRight: 15 }} />
-                  <Text style={styles.modalItemText}>{item.nome}</Text>
+                  <Ionicons name={item.icone} size={24} color={theme.primary} style={{ marginRight: 15 }} />
+                  <Text style={[styles.modalItemText, { color: theme.text }]}>{item.nome}</Text>
                 </TouchableOpacity>
               )}
             />
@@ -408,15 +314,15 @@ export default function AdicionarFerramenta() {
         onRequestClose={() => setImagemModalVisivel(false)}
       >
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPressOut={() => setImagemModalVisivel(false)}>
-          <View style={[styles.modalContent, styles.imageModalContent]}>
-            <Text style={styles.modalTitle}>Adicionar Foto</Text>
+          <View style={[styles.modalContent, styles.imageModalContent, { backgroundColor: theme.card }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Adicionar Foto</Text>
             <TouchableOpacity style={styles.imageOptionButton} onPress={tirarFoto}>
-              <Ionicons name="camera-outline" size={24} color="#38A169" />
-              <Text style={styles.imageOptionText}>Tirar Foto</Text>
+              <Ionicons name="camera-outline" size={24} color={theme.primary} />
+              <Text style={[styles.imageOptionText, { color: theme.text }]}>Tirar Foto</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.imageOptionButton} onPress={escolherDaGaleria}>
-              <Ionicons name="image-outline" size={24} color="#38A169" />
-              <Text style={styles.imageOptionText}>Escolher da Galeria</Text>
+              <Ionicons name="image-outline" size={24} color={theme.primary} />
+              <Text style={[styles.imageOptionText, { color: theme.text }]}>Escolher da Galeria</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalCloseButton} onPress={() => setImagemModalVisivel(false)}>
               <Text style={styles.modalCloseButtonText}>Cancelar</Text>
@@ -424,7 +330,6 @@ export default function AdicionarFerramenta() {
           </View>
         </TouchableOpacity>
       </Modal>
-
     </SafeAreaView>
   );
 }
@@ -445,17 +350,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   backButton: {
-    padding: 5, // Aumentar área de toque
+    padding: 5,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#2D3748',
     marginLeft: 15,
   },
   imagePicker: {
     height: 180,
-    backgroundColor: '#E8F5E9', // Verde bem claro
+    backgroundColor: '#E8F5E9',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -467,7 +371,7 @@ const styles = StyleSheet.create({
   imagePreview: {
     width: '100%',
     height: '100%',
-    borderRadius: 10, // Um pouco menos que o container para não cortar bordas
+    borderRadius: 10,
   },
   imagePlaceholder: {
     justifyContent: 'center',
@@ -475,7 +379,6 @@ const styles = StyleSheet.create({
   },
   imagePickerText: {
     marginTop: 8,
-    color: '#38A169',
     fontSize: 16,
     fontWeight: '500',
   },
@@ -488,7 +391,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     paddingHorizontal: 15,
     marginBottom: 15,
-    minHeight: 55, // Altura mínima
+    minHeight: 55,
   },
   inputIcon: {
     marginRight: 10,
@@ -497,10 +400,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#2D3748',
-    paddingVertical: 12, // Ajustar padding interno
+    paddingVertical: 12,
   },
   submitButton: {
-    backgroundColor: '#38A169', // Verde principal
     borderRadius: 10,
     paddingVertical: 15,
     alignItems: 'center',
@@ -519,19 +421,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  // Estilos do Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'flex-end', // Alinha o modal na parte inferior
+    justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
     paddingTop: 20,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 20, // Padding inferior para safe area no iOS
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '60%', // Limita a altura do modal
+    maxHeight: '60%',
   },
   imageModalContent: {
     maxHeight: '40%',
@@ -539,7 +439,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2D3748',
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -553,7 +452,6 @@ const styles = StyleSheet.create({
   },
   modalItemText: {
     fontSize: 16,
-    color: '#333',
   },
   imageOptionButton: {
     flexDirection: 'row',
@@ -565,7 +463,6 @@ const styles = StyleSheet.create({
   },
   imageOptionText: {
     fontSize: 17,
-    color: '#333',
     marginLeft: 15,
   },
   modalCloseButton: {
@@ -575,49 +472,8 @@ const styles = StyleSheet.create({
   },
   modalCloseButtonText: {
     fontSize: 16,
-    color: '#E53E3E', // Vermelho para fechar/cancelar
+    color: '#E53E3E',
     fontWeight: '500',
-  },
-  infoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
-    borderLeftWidth: 3,
-    borderLeftColor: '#38A169',
-  },
-  infoText: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 14,
-    color: '#2D3748',
-    lineHeight: 20,
-  },
-  progressBox: {
-    marginBottom: 15,
-    padding: 15,
-    backgroundColor: '#F7FAFC',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  progressText: {
-    fontSize: 14,
-    color: '#4A5568',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#38A169',
-    borderRadius: 4,
-  },
+  }
 });
+

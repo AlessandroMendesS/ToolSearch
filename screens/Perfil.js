@@ -151,7 +151,7 @@ export default function TelaPerfil({ navigation }) {
         </View>
         <View style={[estilos.card, { backgroundColor: theme.card }]}>
           <Text style={[estilos.cardTitle, { color: theme.text }]}>Configurações</Text>
-          {renderBotao("analytics", "Dashboard & Analytics", () => navigation.navigate("Dashboard"))}
+          {renderBotao("briefcase-outline", "Meus Empréstimos", () => navigation.navigate("MeusEmprestimos"))}
           {renderBotao("color-palette-outline", "Temas", () => navigation.navigate("Temas"))}
           {renderBotao("qr-code-outline", "Meus QR Codes", () => navigation.navigate("MeusQRCodes"))}
         </View>

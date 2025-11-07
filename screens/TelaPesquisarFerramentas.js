@@ -5,9 +5,11 @@ import {
   Animated, Easing, Platform // Adicionar Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import supabase from '../api/supabaseClient';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { agruparFerramentas, buscarFerramentaDisponivel } from '../utils/toolGrouping';
 
 // Grupos de ferramentas com todos os que existem no AdicionarFerramenta.js
 const grupos = [
@@ -25,6 +27,7 @@ export default function TelaPesquisarFerramentas({ navigation }) {
   const [grupoSelecionado, setGrupoSelecionado] = useState(null);
   const [busca, setBusca] = useState('');
   const [ferramentas, setFerramentas] = useState([]);
+  const [ferramentasAgrupadas, setFerramentasAgrupadas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState(null);
   // Para animação de abertura do grupo
@@ -35,6 +38,17 @@ export default function TelaPesquisarFerramentas({ navigation }) {
       buscarTodasFerramentas();
     }
   }, [grupoSelecionado, busca]);
+
+  // Atualizar dados quando a tela receber foco (após voltar de outras telas)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!grupoSelecionado && !busca.trim()) {
+        buscarTodasFerramentas();
+      } else if (grupoSelecionado) {
+        buscarFerramentasPorCategoria(grupoSelecionado.id);
+      }
+    }, [grupoSelecionado, busca])
+  );
 
   useEffect(() => {
     if (grupoSelecionado) {
@@ -56,11 +70,16 @@ export default function TelaPesquisarFerramentas({ navigation }) {
     try {
       const { data, error } = await supabase.from('ferramentas').select('*');
       if (error) throw error;
-      setFerramentas(data || []);
+      const ferramentasData = data || [];
+      setFerramentas(ferramentasData);
+      // Agrupar ferramentas
+      const agrupadas = agruparFerramentas(ferramentasData);
+      setFerramentasAgrupadas(agrupadas);
     } catch (e) {
       console.error('Erro ao buscar todas as ferramentas:', e);
       setErro('Falha ao carregar ferramentas.');
       setFerramentas([]);
+      setFerramentasAgrupadas([]);
     } finally {
       setLoading(false);
     }
@@ -75,19 +94,25 @@ export default function TelaPesquisarFerramentas({ navigation }) {
         .select('*')
         .eq('categoria_id', categoriaId);
       if (error) throw error;
-      setFerramentas(data || []);
-      if ((data || []).length === 0) {
+      const ferramentasData = data || [];
+      setFerramentas(ferramentasData);
+      // Agrupar ferramentas
+      const agrupadas = agruparFerramentas(ferramentasData);
+      setFerramentasAgrupadas(agrupadas);
+      if (ferramentasData.length === 0) {
         setErro('Nenhuma ferramenta encontrada nesta categoria.');
       }
     } catch (e) {
       console.error('Erro ao buscar ferramentas por categoria:', e);
       setErro('Falha ao carregar ferramentas da categoria.');
       setFerramentas([]);
+      setFerramentasAgrupadas([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Filtrar ferramentas individuais para busca
   const ferramentasFiltradas = busca.trim()
     ? ferramentas.filter(f =>
       f.nome.toLowerCase().includes(busca.toLowerCase()) ||
@@ -95,6 +120,11 @@ export default function TelaPesquisarFerramentas({ navigation }) {
       (f.local && f.local.toLowerCase().includes(busca.toLowerCase()))
     )
     : ferramentas;
+
+  // Filtrar e agrupar ferramentas filtradas
+  const gruposFiltrados = busca.trim()
+    ? agruparFerramentas(ferramentasFiltradas)
+    : ferramentasAgrupadas;
 
   const handleSelecionarGrupo = (grupo) => {
     setBusca('');
@@ -134,7 +164,59 @@ export default function TelaPesquisarFerramentas({ navigation }) {
     </TouchableOpacity>
   );
 
-  const renderFerramentaItem = ({ item }) => (
+  const renderFerramentaItem = ({ item }) => {
+    // Se for um grupo (tem propriedade 'total'), renderizar como grupo
+    if (item.total !== undefined) {
+      const ferramentaDisponivel = buscarFerramentaDisponivel(item);
+      const temDisponivel = item.disponivel > 0;
+      
+      return (
+        <TouchableOpacity
+          style={[styles.ferramentaCard, { backgroundColor: theme.card }]}
+          activeOpacity={0.8}
+          onPress={() => {
+            // Se houver ferramenta disponível, navegar para ela
+            // Caso contrário, mostrar todas as ferramentas do grupo
+            if (ferramentaDisponivel) {
+              navigation.navigate('DetalheFerramenta', { 
+                ferramenta: ferramentaDisponivel,
+                grupo: item 
+              });
+            } else {
+              // Navegar para uma tela de seleção de ferramenta do grupo
+              navigation.navigate('DetalheFerramenta', { 
+                ferramenta: item.ferramentas[0],
+                grupo: item 
+              });
+            }
+          }}
+        >
+          {item.imagem_url ? (
+            <Image source={{ uri: item.imagem_url }} style={styles.ferramentaImagem} resizeMode="cover" />
+          ) : (
+            <View style={[styles.ferramentaImagem, styles.ferramentaImagemPlaceholderIcon]}>
+              <Ionicons name="construct-outline" size={30} color="#a0aec0" />
+            </View>
+          )}
+          <View style={styles.ferramentaInfoContainer}>
+            <Text style={[styles.ferramentaNome, { color: theme.text }]}>{item.nome}</Text>
+            <Text style={[styles.ferramentaLocal, { color: theme.text }]}>Local: {item.local || 'Não informado'}</Text>
+            <View style={styles.ferramentaDisponivelContainer}>
+              <Text style={[styles.ferramentaDisponivelTexto, { color: theme.text }]}>
+                Disponíveis: {item.disponivel}/{item.total}
+              </Text>
+              <View style={[
+                styles.disponivelIndicator,
+                { backgroundColor: temDisponivel ? '#48bb78' : '#f56565' }
+              ]} />
+            </View>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+    
+    // Renderização para ferramenta individual (fallback)
+    return (
     <TouchableOpacity
       style={[styles.ferramentaCard, { backgroundColor: theme.card }]}
       activeOpacity={0.8}
@@ -160,6 +242,7 @@ export default function TelaPesquisarFerramentas({ navigation }) {
       </View>
     </TouchableOpacity>
   );
+  };
 
   const mostrarCategorias = !busca.trim() && !grupoSelecionado;
   const mostrarResultadosBusca = busca.trim();
@@ -238,9 +321,9 @@ export default function TelaPesquisarFerramentas({ navigation }) {
       )}
       {!loading && (mostrarResultadosBusca || mostrarFerramentasGrupo) && (
         <FlatList
-          data={ferramentasFiltradas}
+          data={gruposFiltrados}
           renderItem={renderFerramentaItem}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item.id || item.id?.toString() || `grupo_${item.nome}_${item.categoria_id}`}
           contentContainerStyle={styles.listContentContainer}
           ListEmptyComponent={
             <View style={styles.centeredMessageContainer}>

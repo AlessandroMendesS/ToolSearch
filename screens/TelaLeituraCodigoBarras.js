@@ -120,20 +120,8 @@ export default function TelaLeituraCodigoBarras() {
     setShowUnauthorizedMessage(false);
 
     if (data === CRACHA_AUTORIZADO_PADRAO) {
-      Alert.alert(
-        'Crachá Autorizado',
-        'Acesso permitido para adicionar ferramenta.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              console.log('Navegando para AdicionarFerramenta');
-              navigation.navigate('AdicionarFerramenta');
-            }
-          }
-        ],
-        { cancelable: false }
-      );
+      console.log('Navegando para SelecionarTipoFerramenta');
+      navigation.navigate('SelecionarTipoFerramenta');
     } else {
       setShowUnauthorizedMessage(true);
       Alert.alert(

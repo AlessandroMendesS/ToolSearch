@@ -11,7 +11,7 @@ const getApiUrl = () => {
 
 
 const API_URL = getApiUrl();
-console.log('Usando API URL:', API_URL); // Para debug
+// console.log removido para produção
 
 // Configuração do cliente Axios
 const apiClient = axios.create({
@@ -235,7 +235,15 @@ export const toolService = {
     const response = await apiClient.get('/ferramentas/mais-utilizadas');
     return response.data;
   },
-  // ... outras funções do toolService se houver
+  deleteTool: async (toolId) => {
+    try {
+      const response = await apiClient.delete(`/ferramentas/${toolId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao deletar ferramenta via API:', error);
+      throw error;
+    }
+  },
 };
 
 export default apiClient;

@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TouchableOpacity, Platform, StatusBar, Dimensions, Alert, ActivityIndicator, FlatList, RefreshControl } from "react-native";
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { toolService } from "../api/apiService";
 import { useTheme } from "../context/ThemeContext";
+import { agruparFerramentas, buscarFerramentaDisponivel } from "../utils/toolGrouping";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -42,10 +43,12 @@ const HomeScreen = () => {
     try {
       const response = await toolService.getMostUsedTools();
       if (response.success && response.tools) {
-        setMostUsedTools(response.tools);
+        // Agrupar ferramentas antes de exibir
+        const ferramentasAgrupadas = agruparFerramentas(response.tools);
+        setMostUsedTools(ferramentasAgrupadas);
         // Definir a ferramenta menos utilizada (última do array ordenado)
-        if (response.tools.length > 0) {
-          setLeastUsedTool(response.tools[response.tools.length - 1]);
+        if (ferramentasAgrupadas.length > 0) {
+          setLeastUsedTool(ferramentasAgrupadas[ferramentasAgrupadas.length - 1]);
         } else {
           setLeastUsedTool(null);
         }
@@ -65,6 +68,13 @@ const HomeScreen = () => {
     }
     fetchData(); // Chamar fetchData na montagem inicial e quando user mudar
   }, [user]);
+
+  // Atualizar dados quando a tela receber foco (após voltar de outras telas)
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchData();
+    }, [])
+  );
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -103,23 +113,67 @@ const HomeScreen = () => {
     }
   };
 
-  const renderMostUsedTool = ({ item }) => (
-    <TouchableOpacity
-      style={[estilos.cardFerramentaMaisUsada, { backgroundColor: theme.card }]}
-      onPress={() => navigation.navigate('DetalheFerramenta', { ferramenta: item })}
-    >
-      <Image
-        source={{ uri: item.imagem_url || 'https://via.placeholder.com/100' }}
-        style={[estilos.imagemFerramentaMaisUsada, !item.disponivel && estilos.imagemEmUso]}
-      />
-      {!item.disponivel && (
-        <View style={estilos.emUsoBadge}>
-          <Text style={estilos.emUsoTexto}>Em uso</Text>
-        </View>
-      )}
-      <Text style={[estilos.nomeFerramentaMaisUsada, { color: theme.text }]} numberOfLines={1}>{item.nome}</Text>
-    </TouchableOpacity>
-  );
+  const renderMostUsedTool = ({ item }) => {
+    // Se for um grupo (tem propriedade 'total'), renderizar como grupo
+    if (item.total !== undefined) {
+      const ferramentaDisponivel = buscarFerramentaDisponivel(item);
+      const temDisponivel = item.disponivel > 0;
+      
+      return (
+        <TouchableOpacity
+          style={[estilos.cardFerramentaMaisUsada, { backgroundColor: theme.card }]}
+          onPress={() => {
+            // Se houver ferramenta disponível, navegar para ela
+            if (ferramentaDisponivel) {
+              navigation.navigate('DetalheFerramenta', { 
+                ferramenta: ferramentaDisponivel,
+                grupo: item 
+              });
+            } else {
+              // Navegar para a primeira ferramenta do grupo
+              navigation.navigate('DetalheFerramenta', { 
+                ferramenta: item.ferramentas[0],
+                grupo: item 
+              });
+            }
+          }}
+        >
+          <Image
+            source={{ uri: item.imagem_url || 'https://via.placeholder.com/100' }}
+            style={[estilos.imagemFerramentaMaisUsada, !temDisponivel && estilos.imagemEmUso]}
+          />
+          {!temDisponivel && (
+            <View style={estilos.emUsoBadge}>
+              <Text style={estilos.emUsoTexto}>Sem disponíveis</Text>
+            </View>
+          )}
+          <Text style={[estilos.nomeFerramentaMaisUsada, { color: theme.text }]} numberOfLines={1}>{item.nome}</Text>
+          <Text style={[estilos.quantidadeDisponivel, { color: theme.text }]}>
+            {item.disponivel}/{item.total} disponíveis
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+    
+    // Renderização para ferramenta individual (fallback)
+    return (
+      <TouchableOpacity
+        style={[estilos.cardFerramentaMaisUsada, { backgroundColor: theme.card }]}
+        onPress={() => navigation.navigate('DetalheFerramenta', { ferramenta: item })}
+      >
+        <Image
+          source={{ uri: item.imagem_url || 'https://via.placeholder.com/100' }}
+          style={[estilos.imagemFerramentaMaisUsada, !item.disponivel && estilos.imagemEmUso]}
+        />
+        {!item.disponivel && (
+          <View style={estilos.emUsoBadge}>
+            <Text style={estilos.emUsoTexto}>Em uso</Text>
+          </View>
+        )}
+        <Text style={[estilos.nomeFerramentaMaisUsada, { color: theme.text }]} numberOfLines={1}>{item.nome}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={[estilos.container, { backgroundColor: theme.background }]}>
@@ -182,6 +236,11 @@ const HomeScreen = () => {
                     <View style={{ flex: 1, marginLeft: 0 }}>
                       <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 4 }}>Ferramenta mais utilizada</Text>
                       <Text style={{ fontSize: 15, color: '#555' }}>{mostUsedTools[0]?.nome || 'Nome da ferramenta'}</Text>
+                      {mostUsedTools[0]?.total !== undefined && (
+                        <Text style={{ fontSize: 13, color: '#777', marginTop: 2 }}>
+                          {mostUsedTools[0].disponivel}/{mostUsedTools[0].total} disponíveis
+                        </Text>
+                      )}
                     </View>
                   </View>
                 )}
@@ -195,6 +254,11 @@ const HomeScreen = () => {
                     <View style={{ flex: 1, marginLeft: 0 }}>
                       <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 4 }}>Ferramenta menos utilizada</Text>
                       <Text style={{ fontSize: 15, color: '#555' }}>{leastUsedTool?.nome || 'Nome da ferramenta'}</Text>
+                      {leastUsedTool?.total !== undefined && (
+                        <Text style={{ fontSize: 13, color: '#777', marginTop: 2 }}>
+                          {leastUsedTool.disponivel}/{leastUsedTool.total} disponíveis
+                        </Text>
+                      )}
                     </View>
                   </View>
                 )}
@@ -254,7 +318,7 @@ const HomeScreen = () => {
             <FlatList
               data={mostUsedTools}
               renderItem={renderMostUsedTool}
-              keyExtractor={(item) => item.id.toString()}
+              keyExtractor={(item) => item.id || item.id?.toString() || `grupo_${item.nome}_${item.categoria_id}`}
               numColumns={2}
               scrollEnabled={false}
               columnWrapperStyle={{ justifyContent: 'space-between' }}
@@ -493,6 +557,12 @@ const estilos = StyleSheet.create({
     fontWeight: '500',
     color: '#2D3748',
     textAlign: 'center',
+  },
+  quantidadeDisponivel: {
+    fontSize: 11,
+    color: '#718096',
+    textAlign: 'center',
+    marginTop: 4,
   },
   nenhumaFerramentaTexto: {
     textAlign: 'center',
