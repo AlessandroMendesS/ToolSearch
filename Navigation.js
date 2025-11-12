@@ -3,7 +3,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import TelaInicial from './screens/Home';
 import TelaPerfil from './screens/Perfil';
 import TelaLeituraCodigoBarras from './screens/TelaLeituraCodigoBarras';
 import TelaPesquisarFerramentas from './screens/TelaPesquisarFerramentas';

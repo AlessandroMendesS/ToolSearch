@@ -35,6 +35,8 @@ export default function DetalheFerramenta({ route, navigation }) {
   const [emprestimosGrupo, setEmprestimosGrupo] = useState({}); // Mapa de ferramenta_id -> emprestimo
   const [erroDevolver, setErroDevolver] = useState('');
   const [mostrarListaFerramentas, setMostrarListaFerramentas] = useState(false);
+  const [selectionModeDetalhes, setSelectionModeDetalhes] = useState(false);
+  const [selectedGroupTools, setSelectedGroupTools] = useState([]);
 
   // Buscar empréstimo aberto ou último empréstimo para histórico
   const fetchEmprestimoAberto = async () => {
@@ -93,12 +95,36 @@ export default function DetalheFerramenta({ route, navigation }) {
     }
   };
 
-  // Atualizar grupo quando necessário
+  // Atualizar grupo quando necessário ou buscar se não foi fornecido
   useEffect(() => {
     if (grupo) {
       setGrupoFerramentas(grupo);
+    } else if (ferramentaInicial && !grupoFerramentas) {
+      // Se não há grupo fornecido, buscar se existe grupo para esta ferramenta
+      const buscarGrupo = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('ferramentas')
+            .select('*')
+            .eq('nome', ferramentaInicial.nome)
+            .eq('categoria_id', ferramentaInicial.categoria_id);
+          
+          if (!error && data && data.length > 0) {
+            const grupos = agruparFerramentas(data);
+            const grupoEncontrado = grupos.find(g => 
+              g.nome === ferramentaInicial.nome && g.categoria_id === ferramentaInicial.categoria_id
+            );
+            if (grupoEncontrado) {
+              setGrupoFerramentas(grupoEncontrado);
+            }
+          }
+        } catch (err) {
+          console.error('Erro ao buscar grupo:', err);
+        }
+      };
+      buscarGrupo();
     }
-  }, [grupo]);
+  }, [grupo, ferramentaInicial]);
 
   useEffect(() => {
     if (ferramentaInicial) {
@@ -454,6 +480,189 @@ export default function DetalheFerramenta({ route, navigation }) {
     );
   };
 
+  const handleDeleteSelectedGroupTools = async () => {
+    if (!grupoFerramentas || !grupoFerramentas.ferramentas) {
+      alert('Erro: Grupo não encontrado.');
+      return;
+    }
+
+    const ferramentasParaExcluir = grupoFerramentas.ferramentas.filter(item => 
+      selectedGroupTools.includes(item.id)
+    );
+
+    if (ferramentasParaExcluir.length === 0) {
+      alert('Nenhum item selecionado para exclusão.');
+      return;
+    }
+
+    Alert.alert(
+      'Confirmar exclusão',
+      `Tem certeza que deseja excluir ${ferramentasParaExcluir.length} ferramenta(s) do grupo? Esta ação não pode ser desfeita.`,
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              let sucessos = 0;
+              let erros = 0;
+
+              for (const ferramentaItem of ferramentasParaExcluir) {
+                try {
+                  // Primeiro, verificar se há empréstimos ativos
+                  const { data: emprestimos, error: erroEmprestimos } = await supabase
+                    .from('emprestimos')
+                    .select('id')
+                    .eq('ferramenta_id', ferramentaItem.id)
+                    .eq('status', 'emprestado');
+
+                  if (erroEmprestimos) {
+                    console.error(`Erro ao verificar empréstimos da ferramenta ${ferramentaItem.id}:`, erroEmprestimos);
+                    erros++;
+                    continue;
+                  }
+
+                  if (emprestimos && emprestimos.length > 0) {
+                    Alert.alert(
+                      'Não é possível excluir',
+                      'Esta ferramenta possui empréstimos ativos. Devolva todos os empréstimos antes de excluir.',
+                      [{ text: 'OK' }]
+                    );
+                    erros++;
+                    continue;
+                  }
+
+                  // Deletar empréstimos relacionados primeiro (se houver)
+                  const { error: erroDeleteEmprestimos } = await supabase
+                    .from('emprestimos')
+                    .delete()
+                    .eq('ferramenta_id', ferramentaItem.id);
+
+                  if (erroDeleteEmprestimos) {
+                    console.warn(`Aviso ao deletar empréstimos da ferramenta ${ferramentaItem.id}:`, erroDeleteEmprestimos);
+                    // Continuar mesmo com erro, pode não haver empréstimos
+                  }
+
+                  // Tentar deletar via Supabase primeiro
+                  let deletadoComSucesso = false;
+                  
+                  try {
+                    const { data, error } = await supabase
+                      .from('ferramentas')
+                      .delete()
+                      .eq('id', ferramentaItem.id)
+                      .select();
+
+                    if (error) {
+                      console.log(`Erro ao deletar ferramenta ${ferramentaItem.id} via Supabase direto, tentando via API...`, error);
+                      // Se falhar, tentar via backend API
+                      throw new Error('Supabase direto falhou, tentando API');
+                    }
+
+                    if (data && data.length > 0) {
+                      deletadoComSucesso = true;
+                    } else {
+                      Alert.alert('Aviso', 'Ferramenta não encontrada ou já foi excluída.');
+                      setLoading(false);
+                      return;
+                    }
+                  } catch (supabaseError) {
+                    // Se falhar no Supabase direto, tentar via backend API
+                    console.log(`Tentando deletar ferramenta ${ferramentaItem.id} via backend API...`);
+                    try {
+                      const response = await toolService.deleteTool(ferramentaItem.id);
+                      if (response && response.success) {
+                        deletadoComSucesso = true;
+                      } else {
+                        throw new Error(response?.message || 'Erro ao deletar via API');
+                      }
+                    } catch (apiError) {
+                      console.error(`Erro ao deletar ferramenta ${ferramentaItem.id} via API:`, apiError);
+                      let mensagemErro = 'Não foi possível excluir a ferramenta.';
+                      
+                      if (apiError.response?.data?.message) {
+                        mensagemErro = apiError.response.data.message;
+                      } else if (apiError.message) {
+                        mensagemErro = apiError.message;
+                      }
+                      
+                      Alert.alert('Erro', mensagemErro);
+                      setLoading(false);
+                      return;
+                    }
+                  }
+
+                  if (!deletadoComSucesso) {
+                    Alert.alert('Erro', `Não foi possível excluir a ferramenta ${ferramentaItem.nome}.`);
+                    setLoading(false);
+                    return;
+                  }
+                  sucessos++;
+                } catch (err) {
+                  console.error(`Erro ao excluir ferramenta ${ferramentaItem.id}:`, err);
+                  erros++;
+                }
+              }
+
+              // Recarregar dados do grupo
+              const { data: updatedData, error: updateError } = await supabase
+                .from('ferramentas')
+                .select('*')
+                .eq('nome', grupoFerramentas.nome)
+                .eq('categoria_id', grupoFerramentas.categoria_id);
+              
+              if (updateError) {
+                console.error('Erro ao recarregar dados do grupo após exclusão:', updateError);
+              } else if (updatedData) {
+                const gruposAtualizados = agruparFerramentas(updatedData);
+                const grupoAtualizado = gruposAtualizados.find(g => 
+                  g.nome === grupoFerramentas.nome && g.categoria_id === grupoFerramentas.categoria_id
+                );
+                if (grupoAtualizado) {
+                  setGrupoFerramentas(grupoAtualizado);
+                  // Atualizar ferramenta atual se necessário
+                  const ferramentaAtualizada = updatedData.find(f => f.id === ferramenta?.id);
+                  if (ferramentaAtualizada) {
+                    setFerramenta(ferramentaAtualizada);
+                  }
+                  // Recarregar empréstimos do grupo
+                  await fetchEmprestimosGrupo();
+                }
+              }
+
+              if (erros === 0) {
+                alert(`${sucessos} ferramenta(s) excluída(s) com sucesso!`);
+              } else {
+                alert(`${sucessos} excluída(s) com sucesso. ${erros} erro(s) ao excluir.`);
+              }
+            } catch (err) {
+              let msg = 'Erro ao excluir ferramentas do grupo.';
+              if (err.response && err.response.data && err.response.data.message) {
+                msg = err.response.data.message;
+              }
+              setErroDevolver(msg);
+              alert(msg);
+            } finally {
+              setLoading(false);
+              setSelectionModeDetalhes(false);
+              setSelectedGroupTools([]);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleCancelGroupSelection = () => {
+    setSelectionModeDetalhes(false);
+    setSelectedGroupTools([]);
+  };
+
   // Renderização
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -462,20 +671,62 @@ export default function DetalheFerramenta({ route, navigation }) {
           <Ionicons name="chevron-back" size={28} color={theme.primary} />
         </TouchableOpacity>
         <View style={styles.headerActions}>
-          <TouchableOpacity 
-            onPress={handleEditar} 
-            style={[styles.headerButton, { backgroundColor: theme.primary + '20' }]}
-          >
-            <Ionicons name="create-outline" size={24} color={theme.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={handleDeletar} 
-            style={[styles.headerButton, { backgroundColor: '#f56565' + '20' }]}
-          >
-            <Ionicons name="trash-outline" size={24} color="#f56565" />
-          </TouchableOpacity>
+          {/* Botão de selecionar: apenas para grupos com 2 ou mais ferramentas e quando a lista está expandida */}
+          {grupoFerramentas && grupoFerramentas.total >= 2 && mostrarListaFerramentas && (
+            <TouchableOpacity 
+              onPress={() => setSelectionModeDetalhes(!selectionModeDetalhes)} 
+              style={[styles.headerButton, { backgroundColor: theme.primary + '20' }]}
+            >
+              <Ionicons name="checkmark-done-circle-outline" size={24} color={theme.primary} />
+            </TouchableOpacity>
+          )}
+          {!selectionModeDetalhes && (
+            <>
+              <TouchableOpacity 
+                onPress={handleEditar} 
+                style={[styles.headerButton, { backgroundColor: theme.primary + '20' }]}
+              >
+                <Ionicons name="create-outline" size={24} color={theme.primary} />
+              </TouchableOpacity>
+              {/* Botão de excluir: para ferramentas únicas (sem grupo ou grupo com apenas 1 ferramenta) */}
+              {(!grupoFerramentas || (grupoFerramentas.total === 1)) && (
+                <TouchableOpacity 
+                  onPress={handleDeletar} 
+                  style={[styles.headerButton, { backgroundColor: '#f56565' + '20' }]}
+                >
+                  <Ionicons name="trash-outline" size={24} color="#f56565" />
+                </TouchableOpacity>
+              )}
+            </>
+          )}
         </View>
       </View>
+      {selectionModeDetalhes && (
+        <View style={[styles.selectionActionsContainerDetalhes, { backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.background + '40' }]}>
+          <Text style={[styles.selectionCountDetalhes, { color: theme.text }]}>
+            {selectedGroupTools.length} selecionado(s)
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity 
+              style={[styles.actionButtonDetalhes, { backgroundColor: selectedGroupTools.length === 0 ? '#cbd5e0' : '#f56565' }]} 
+              onPress={handleDeleteSelectedGroupTools}
+              disabled={selectedGroupTools.length === 0 || loading}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="trash-outline" size={20} color="#FFF" />
+              <Text style={styles.actionButtonTextDetalhes}>Excluir</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButtonDetalhes, { backgroundColor: '#718096' }]} 
+              onPress={handleCancelGroupSelection}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="close-circle-outline" size={20} color="#FFF" />
+              <Text style={styles.actionButtonTextDetalhes}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
       <ScrollView contentContainerStyle={styles.scrollContentContainer}>
         <View style={styles.imageContainer}>
           {ferramenta.imagem_url ? (
@@ -560,12 +811,53 @@ export default function DetalheFerramenta({ route, navigation }) {
               data={grupoFerramentas.ferramentas}
               keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => {
+                const isSelected = selectedGroupTools.includes(item.id);
                 const emprestimoItem = emprestimosGrupo[item.id];
                 const estaEmprestada = !item.disponivel || (emprestimoItem && emprestimoItem.status === 'emprestado');
                 const podeDevolverItem = emprestimoItem && emprestimoItem.usuario_id === user.id && emprestimoItem.status === 'emprestado';
+
+                const handlePress = () => {
+                  if (selectionModeDetalhes) {
+                    setSelectedGroupTools((prevSelected) => {
+                      if (prevSelected.includes(item.id)) {
+                        return prevSelected.filter((id) => id !== item.id);
+                      } else {
+                        return [...prevSelected, item.id];
+                      }
+                    });
+                  } else {
+                    // Comportamento normal: navegar para detalhes da ferramenta
+                    navigation.navigate('DetalheFerramenta', { ferramenta: item });
+                  }
+                };
+
+                const handleLongPress = () => {
+                  if (!selectionModeDetalhes) {
+                    setSelectionModeDetalhes(true);
+                    setSelectedGroupTools([item.id]);
+                  }
+                };
                 
                 return (
-                  <View style={[styles.ferramentaItemLista, { backgroundColor: theme.background }]}>
+                  <TouchableOpacity
+                    style={[
+                      styles.ferramentaItemLista,
+                      { backgroundColor: theme.background },
+                      isSelected && { borderColor: theme.primary, borderWidth: 2 }
+                    ]}
+                    onPress={handlePress}
+                    onLongPress={handleLongPress}
+                    activeOpacity={0.7}
+                  >
+                    {selectionModeDetalhes && (
+                      <View style={styles.checkboxContainerLista}>
+                        <Ionicons
+                          name={isSelected ? "checkmark-circle" : "ellipse-outline"}
+                          size={22}
+                          color={isSelected ? theme.primary : theme.text + '80'}
+                        />
+                      </View>
+                    )}
                     <View style={styles.ferramentaItemInfo}>
                       <Text style={[styles.ferramentaItemNome, { color: theme.text }]}>
                         Patrimônio: {formatarPatrimonio(item.patrimonio)}
@@ -593,7 +885,7 @@ export default function DetalheFerramenta({ route, navigation }) {
                       )}
                     </View>
                     <View style={styles.ferramentaItemActions}>
-                      {item.disponivel && !estaEmprestada && (
+                      {!selectionModeDetalhes && item.disponivel && !estaEmprestada && (
                         <TouchableOpacity
                           style={[styles.emprestarItemButton, { backgroundColor: theme.primary }]}
                           onPress={() => handleEmprestar(item)}
@@ -602,7 +894,7 @@ export default function DetalheFerramenta({ route, navigation }) {
                           <Text style={styles.emprestarItemTexto}>Emprestar</Text>
                         </TouchableOpacity>
                       )}
-                      {estaEmprestada && podeDevolverItem && (
+                      {!selectionModeDetalhes && estaEmprestada && podeDevolverItem && (
                         <TouchableOpacity
                           style={[styles.devolverItemButton, { backgroundColor: '#38A169' }]}
                           onPress={() => handleDevolver(item, emprestimoItem.id)}
@@ -613,7 +905,7 @@ export default function DetalheFerramenta({ route, navigation }) {
                           </Text>
                         </TouchableOpacity>
                       )}
-                      {estaEmprestada && !podeDevolverItem && (
+                      {!selectionModeDetalhes && estaEmprestada && !podeDevolverItem && (
                         <View style={[styles.naoPodeDevolverBadge, { backgroundColor: theme.background }]}>
                           <Text style={[styles.naoPodeDevolverTexto, { color: theme.text }]}>
                             Em uso
@@ -621,7 +913,7 @@ export default function DetalheFerramenta({ route, navigation }) {
                         </View>
                       )}
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 );
               }}
               scrollEnabled={false}
@@ -908,6 +1200,8 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   ferramentaItemInfo: {
     flex: 1,
@@ -988,5 +1282,39 @@ const styles = StyleSheet.create({
   emprestimoInfoData: {
     fontSize: 11,
     opacity: 0.5,
+  },
+  checkboxContainerLista: {
+    marginRight: 10,
+  },
+  selectionActionsContainerDetalhes: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginBottom: 0,
+    borderRadius: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  selectionCountDetalhes: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  actionButtonDetalhes: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    gap: 8,
+  },
+  actionButtonTextDetalhes: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFF',
   },
 });

@@ -19,6 +19,7 @@ import EditarFerramenta from './screens/EditarFerramenta';
 import MeusQRCodes from './screens/MeusQRCodes';
 import Dashboard from './screens/Dashboard';
 import MeusEmprestimos from './screens/MeusEmprestimos';
+import Tutorial from './screens/Tutorial';
 
 
 const Stack = createNativeStackNavigator();
@@ -43,6 +44,7 @@ export default function App() {
             <Stack.Screen name="MeusQRCodes" component={MeusQRCodes} />
             <Stack.Screen name="Dashboard" component={Dashboard} />
             <Stack.Screen name="MeusEmprestimos" component={MeusEmprestimos} />
+            <Stack.Screen name="Tutorial" component={Tutorial} />
           </Stack.Navigator>
         </NavigationContainer>
       </ThemeProvider>

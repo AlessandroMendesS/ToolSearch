@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Image,
   SafeAreaView, StatusBar, FlatList, ActivityIndicator,
-  Animated, Easing, Platform // Adicionar Platform
+  Animated, Easing, Platform, Alert // Adicionar Platform e Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -10,6 +10,7 @@ import supabase from '../api/supabaseClient';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { agruparFerramentas, buscarFerramentaDisponivel } from '../utils/toolGrouping';
+import { toolService } from '../api/apiService';
 
 // Grupos de ferramentas com todos os que existem no AdicionarFerramenta.js
 const grupos = [
@@ -30,6 +31,8 @@ export default function TelaPesquisarFerramentas({ navigation }) {
   const [ferramentasAgrupadas, setFerramentasAgrupadas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedTools, setSelectedTools] = useState([]);
   // Para animação de abertura do grupo
   const animLista = useRef(new Animated.Value(0)).current;
 
@@ -42,12 +45,14 @@ export default function TelaPesquisarFerramentas({ navigation }) {
   // Atualizar dados quando a tela receber foco (após voltar de outras telas)
   useFocusEffect(
     React.useCallback(() => {
-      if (!grupoSelecionado && !busca.trim()) {
-        buscarTodasFerramentas();
-      } else if (grupoSelecionado) {
-        buscarFerramentasPorCategoria(grupoSelecionado.id);
-      }
-    }, [grupoSelecionado, busca])
+      // Quando a tela é focada (ex: ao clicar na aba Home), reseta para a visualização de categorias
+      setGrupoSelecionado(null);
+      setBusca('');
+      buscarTodasFerramentas(); // Garante que todas as ferramentas sejam carregadas novamente
+      return () => {
+        // Opcional: fazer algo quando a tela perde o foco
+      };
+    }, [])
   );
 
   useEffect(() => {
@@ -145,6 +150,44 @@ export default function TelaPesquisarFerramentas({ navigation }) {
     }).start(({ finished }) => {
       if (finished) setGrupoSelecionado(null);
     });
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedTools.length === 0) return;
+
+    Alert.alert(
+      'Confirmar Exclusão',
+      `Deseja realmente excluir ${selectedTools.length} ferramenta(s) selecionada(s)?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              for (const toolId of selectedTools) {
+                await toolService.deleteTool(toolId);
+              }
+              Alert.alert('Sucesso', `${selectedTools.length} ferramenta(s) excluída(s) com sucesso.`);
+              setSelectionMode(false);
+              setSelectedTools([]);
+              buscarTodasFerramentas(); // Recarregar a lista
+            } catch (error) {
+              console.error('Erro ao excluir ferramentas:', error);
+              Alert.alert('Erro', 'Falha ao excluir ferramenta(s).');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleCancelSelection = () => {
+    setSelectionMode(false);
+    setSelectedTools([]);
   };
 
   const renderCategoriaItem = ({ item }) => (
@@ -258,14 +301,32 @@ export default function TelaPesquisarFerramentas({ navigation }) {
     <View>
       <View style={[styles.topo, { backgroundColor: theme.background }]}>
         <View style={styles.row}>
-          <View style={[styles.fotoPerfilContainer, { borderColor: theme.primary }]}>
+          <TouchableOpacity onPress={() => navigation.navigate('Perfil')} style={[styles.fotoPerfilContainer, { borderColor: theme.primary }]}>
             <Image
               source={user?.imagemPerfil ? { uri: user.imagemPerfil } : require('../assets/img/perfil.png')}
               style={styles.fotoPerfil}
             />
-          </View>
+          </TouchableOpacity>
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={[styles.saudacao, { color: theme.text }]}>{saudacao} 👋</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 4 }}>
+              <Text style={[styles.saudacao, { color: theme.text, flex: 1 }]}>{saudacao} 👋</Text>
+              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                <TouchableOpacity 
+                  style={[styles.actionButtonIconOnly, { backgroundColor: theme.primary + '20' }]} 
+                  onPress={() => navigation.navigate('MeusEmprestimos')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="briefcase-outline" size={20} color={theme.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.actionButtonIconOnly, { backgroundColor: theme.primary + '20' }]} 
+                  onPress={() => navigation.navigate('Tutorial')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="help-circle-outline" size={20} color={theme.primary} />
+                </TouchableOpacity>
+              </View>
+            </View>
             <Text style={[styles.nomeUsuario, { color: theme.text }]} numberOfLines={1}>{user?.nome || 'Usuário'}</Text>
           </View>
         </View>
@@ -280,6 +341,32 @@ export default function TelaPesquisarFerramentas({ navigation }) {
             {grupoSelecionado && !busca.trim() ? `Voltar para Categorias (de ${grupoSelecionado.nome})` : 'Voltar para Categorias'}
           </Text>
         </TouchableOpacity>
+      )}
+      {selectionMode && (
+        <View style={[styles.selectionActionsContainer, { backgroundColor: theme.card }]}>
+          <Text style={[styles.selectionCount, { color: theme.text }]}>
+            {selectedTools.length} selecionado(s)
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: theme.error }]} 
+              onPress={handleDeleteSelected}
+              disabled={selectedTools.length === 0}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="trash-outline" size={20} color="#FFF" />
+              <Text style={styles.actionButtonTextPrimary}>Excluir</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: theme.secondary }]} 
+              onPress={handleCancelSelection}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="close-circle-outline" size={20} color="#FFF" />
+              <Text style={styles.actionButtonTextPrimary}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       )}
       {loading && (
         <View style={styles.centeredMessageContainer}>
@@ -377,6 +464,51 @@ const styles = StyleSheet.create({
     color: '#1A202C',
     marginTop: 1,
   },
+  actionButtonCircular: {
+    borderRadius: 25,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+  },
+  actionButtonTextCircular: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  actionButtonSmall: {
+    borderRadius: 16,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+  },
+  actionButtonText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  actionButtonIconOnly: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 0,
+    shadowOpacity: 0,
+  },
   botaoVoltarCategorias: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -434,7 +566,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 10,
-    marginHorizontal: 10, // Era 20, reduzido para listContentContainer
+    marginHorizontal: 10,
     marginVertical: 7,
     padding: 12,
     shadowColor: "#000",
@@ -442,6 +574,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 2,
     elevation: 2,
+  },
+  cardSelectionMode: {
+    paddingLeft: 10, // Espaço para o checkbox
+  },
+  checkboxContainer: {
+    marginRight: 10,
   },
   ferramentaImagem: {
     width: 75, // Ajustado
@@ -506,5 +644,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#718096',
     textAlign: 'center',
+  },
+  selectionActionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginBottom: 10,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  selectionCount: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    gap: 8,
+  },
+  actionButtonTextPrimary: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFF',
   },
 });

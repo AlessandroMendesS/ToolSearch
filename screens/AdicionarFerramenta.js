@@ -321,9 +321,9 @@ export default function AdicionarFerramenta() {
             )}
           </TouchableOpacity>
 
-          <InputField icon="hammer-outline" placeholder="Nome da Ferramenta" value={nome} onChangeText={setNome} />
-          <InputField icon="document-text-outline" placeholder="Nº de Patrimônio Inicial" value={patrimonio} onChangeText={setPatrimonio} keyboardType="numeric" />
-          <InputField icon="copy-outline" placeholder="Quantidade (padrão: 1)" value={quantidade} onChangeText={(text) => {
+          <InputField icon="hammer-outline" placeholder="Ex: Furadeira de impacto" value={nome} onChangeText={setNome} />
+          <InputField icon="document-text-outline" placeholder="Ex: 12345 (apenas números)" value={patrimonio} onChangeText={setPatrimonio} keyboardType="numeric" />
+          <InputField icon="copy-outline" placeholder="Ex: 1 (padrão) ou 5" value={quantidade} onChangeText={(text) => {
             // Permitir apenas números e permitir campo vazio
             const num = text.replace(/[^0-9]/g, '');
             setQuantidade(num);
@@ -357,8 +357,8 @@ export default function AdicionarFerramenta() {
             <Ionicons name="chevron-down" size={22} color="#7DA38C" />
           </TouchableOpacity>
 
-          <InputField icon="information-circle-outline" placeholder="Detalhes (opcional)" value={detalhes} onChangeText={setDetalhes} multiline numberOfLines={3} />
-          <InputField icon="location-outline" placeholder="Local de Armazenamento" value={local} onChangeText={setLocal} />
+          <InputField icon="information-circle-outline" placeholder="Ex: Com fio, 1000W, para madeira" value={detalhes} onChangeText={setDetalhes} multiline numberOfLines={3} />
+          <InputField icon="location-outline" placeholder="Ex: Armário 3, Gaveta B" value={local} onChangeText={setLocal} />
 
           <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
             {loading ? (

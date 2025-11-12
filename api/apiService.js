@@ -11,19 +11,15 @@ const getApiUrl = () => {
 
 
 const API_URL = getApiUrl();
-// console.log removido para produção
 
-// Configuração do cliente Axios
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  // Aumentar timeout para dar mais tempo para a resposta
-  timeout: 30000 // Aumentado para 30 segundos
+  timeout: 30000 
 });
 
-// Interceptor para adicionar o token às requisições
 apiClient.interceptors.request.use(
   async (config) => {
     try {
@@ -44,7 +40,6 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Interceptor para tratar respostas e erros
 apiClient.interceptors.response.use(
   (response) => {
     console.log('Resposta recebida:', response.status);
@@ -53,25 +48,19 @@ apiClient.interceptors.response.use(
   (error) => {
     console.error('Erro na resposta:', error);
 
-    // Mensagem mais detalhada para debug
     if (error.response) {
-      // O servidor respondeu com um status fora do intervalo 2xx
       console.error('Erro do servidor:', error.response.status, error.response.data);
     } else if (error.request) {
-      // A requisição foi feita mas não houve resposta
       console.error('Sem resposta do servidor. Verifique IP/conexão e se o servidor está rodando.');
       console.error('Detalhes do request:', error.request._url);
     } else {
-      // Erro na configuração da requisição
       console.error('Erro na configuração da requisição:', error.message);
     }
 
-    // Verifica se é erro de timeout
     if (error.code === 'ECONNABORTED') {
       console.error('Timeout na requisição - o servidor demorou muito para responder');
     }
 
-    // Verifica se é erro de rede
     if (error.message && error.message.includes('Network Error')) {
       console.error('Erro de rede - verifique sua conexão e se o servidor está acessível no IP correto');
     }
@@ -80,9 +69,9 @@ apiClient.interceptors.response.use(
   }
 );
 
-// Serviço de autenticação
+
 export const authService = {
-  // Registrar um novo usuário
+  
   register: async (userData) => {
     try {
       console.log('Tentando registrar usuário:', userData.nome);
@@ -91,7 +80,7 @@ export const authService = {
       const response = await apiClient.post('/auth/register', userData);
 
       if (response.data.token) {
-        // Armazenar token e dados do usuário localmente
+  
         await AsyncStorage.setItem('userToken', response.data.token);
         await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
       }
@@ -100,25 +89,21 @@ export const authService = {
     } catch (error) {
       console.error('Erro completo no registro:', error);
       if (error.response) {
-        // O servidor respondeu com um status diferente de 2xx
         console.error('Erro do servidor:', error.response.status, error.response.data);
         return error.response.data;
       } else if (error.request) {
-        // A requisição foi feita mas não houve resposta
         console.error('Sem resposta do servidor. Detalhes:', error.request._url);
         return {
           success: false,
           message: 'Servidor não respondeu. Verifique se o backend está rodando e acessível no IP correto.'
         };
       } else {
-        // Erro na configuração da requisição
         console.error('Erro na configuração da requisição:', error.message);
         return { success: false, message: 'Erro ao configurar requisição: ' + error.message };
       }
     }
   },
 
-  // Login de usuário
   login: async (credentials) => {
     try {
       console.log('Tentando login com:', credentials.nome);
@@ -127,7 +112,6 @@ export const authService = {
       const response = await apiClient.post('/auth/login', credentials);
 
       if (response.data.token) {
-        // Armazenar token e dados do usuário localmente
         await AsyncStorage.setItem('userToken', response.data.token);
         await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
       }
@@ -148,10 +132,8 @@ export const authService = {
     }
   },
 
-  // Logout de usuário
   logout: async () => {
     try {
-      // Remover token e dados do usuário do armazenamento local
       await AsyncStorage.removeItem('userToken');
       await AsyncStorage.removeItem('userData');
       return { success: true };
@@ -160,7 +142,6 @@ export const authService = {
     }
   },
 
-  // Verificar se o usuário está autenticado
   checkAuth: async () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
@@ -172,14 +153,12 @@ export const authService = {
       const response = await apiClient.get('/auth/check');
       return { isAuthenticated: true, user: response.data.user };
     } catch (error) {
-      // Se houver erro na verificação, considerar como não autenticado
       await AsyncStorage.removeItem('userToken');
       await AsyncStorage.removeItem('userData');
       return { isAuthenticated: false };
     }
   },
 
-  // Método de teste para verificar a conexão com o backend
   testConnection: async () => {
     try {
       console.log('Testando conexão com:', `${API_URL}/test`);
@@ -199,7 +178,6 @@ export const authService = {
 
   updateUser: async (userId, userData) => {
     try {
-      // O token é injetado pelo interceptor, não precisa passar aqui
       const response = await apiClient.put(`/auth/users/${userId}`, userData);
       return response.data;
     } catch (error) {

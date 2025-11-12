@@ -35,15 +35,6 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-localization",
-      [
-        "expo-media-library",
-        {
-          "photosPermission": "O aplicativo precisa de permissão para salvar QR Codes na galeria.",
-          "savePhotosPermission": "Permite que o aplicativo salve QR Codes na galeria.",
-          "isAccessMediaLocationEnabled": false
-        }
-      ],
       [
         "expo-camera",
         {
