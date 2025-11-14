@@ -1,0 +1,56 @@
+{
+  "name": "toolsearch",
+  "license": "0BSD",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "build:android": "eas build --platform android --profile preview",
+    "build:android:prod": "eas build --platform android --profile production",
+    "build:ios": "eas build --platform ios --profile preview",
+    "build:ios:prod": "eas build --platform ios --profile production"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "^6.1.2",
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-navigation/bottom-tabs": "^7.3.10",
+    "@react-navigation/native": "^7.1.6",
+    "@react-navigation/native-stack": "^7.3.10",
+    "@react-navigation/stack": "^7.3.2",
+    "@supabase/supabase-js": "^2.38.0",
+    "axios": "^1.9.0",
+    "base-64": "^1.0.0",
+    "expo": "^54.0.23",
+    "expo-camera": "~17.0.9",
+    "expo-constants": "~18.0.10",
+    "expo-file-system": "~19.0.17",
+    "expo-image-picker": "^17.0.8",
+    "expo-status-bar": "^3.0.8",
+    "react": "^19.1.0",
+    "react-native": "^0.81.5",
+    "react-native-gesture-handler": "^2.28.0",
+    "react-native-qrcode-svg": "^6.3.15",
+    "react-native-reanimated": "^4.1.1",
+    "react-native-safe-area-context": "^5.6.0",
+    "react-native-screens": "^4.16.0",
+    "react-native-svg": "^15.12.1",
+    "react-native-url-polyfill": "^2.0.0",
+    "react-native-vector-icons": "^10.2.0",
+    "stream-browserify": "^3.0.0",
+    "text-encoding": "^0.7.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@react-native-community/cli": "^18.0.0"
+  },
+  "resolutions": {
+    "ws": "8.17.1"
+  },
+  "overrides": {
+    "ws": "8.17.1"
+  },
+  "private": true
+}
