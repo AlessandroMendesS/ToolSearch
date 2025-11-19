@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="assets/img/LOGOreadme.png" alt="ToolSearch Logo" width="120"/>
+  <img src="assets/img/lg.png" alt="ToolSearch Logo" width="120"/>
 </p>
 
 <h1 align="center">ToolSearch</h1>
