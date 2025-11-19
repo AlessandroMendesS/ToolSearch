@@ -191,7 +191,7 @@ O aplicativo abrirá no Expo Go ou em um emulador configurado.
 
 ## 📄 Licença
 
-Este projeto foi desenvolvido como parte do programa SENAI e está disponível para fins educacionais.
+Este projeto foi desenvolvido como parte da faculdade SENAI Adolpho Lobbe .
 
 ---
 
