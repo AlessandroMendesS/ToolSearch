@@ -38,7 +38,6 @@
       <strong>Mateus Barrosso</strong>
     </td>
     <td align="center">
-      
     </td>
   </tr>
 </table>
@@ -92,10 +91,8 @@ Adicione fotos às ferramentas para identificação visual rápida
 - **JavaScript** · 100%
 - **React Native** · Framework principal
 - **Expo** · Desenvolvimento e build
-- **Supabase** · Backend e banco de dados
-- **React Navigation** · Navegação entre telas
-- **AsyncStorage** · Armazenamento local
-- **Expo Camera** · Leitura de códigos
+- **Supabase** · Banco de dados
+- **Render** . Backend em nuvem
 - **React Native QRCode** · Geração de QR Codes
 
 ---
@@ -103,14 +100,14 @@ Adicione fotos às ferramentas para identificação visual rápida
 ## 📂 Estrutura do Projeto
 ```
 ToolSearch/
-├── App.js                    # Componente raiz
-├── Navigation.js             # Configuração de navegação
-├── api/                      # Serviços e integrações
-├── assets/                   # Imagens e recursos
-├── context/                  # Contextos (Auth, Theme)
-├── screens/                  # Telas do aplicativo
-├── utils/                    # Funções utilitárias
-└── themes.js                 # Configuração de temas
+├── App.js                   
+├── Navigation.js            
+├── api/                    
+├── assets/                  
+├── context/                  
+├── screens/                 
+├── utils/                   
+└── themes.js                
 ```
 
 ---
