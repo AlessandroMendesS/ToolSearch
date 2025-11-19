@@ -39,4 +39,57 @@ Com uma interface **intuitiva e responsiva**, o ToolSearch combina **estética, 
 ---
 
 ## 🌳 Estrutura principal
+├── App.js
+├── Navigation.js
+├── index.js
+├── app.json
+├── package.json
+├── assets/
+│ └── logo.png
+├── api/
+├── backend/
+├── context/
+├── screens/
+├── utils/
+├── themes.js & temas.js
+└── ...
+Veja todos os arquivos [aqui](https://github.com/AlessandroMendesS/ToolSearch).
 
+---
+
+## 💻 Tecnologias
+
+- **JavaScript (100%)**  
+- **React Native (estrutura principal)**  
+- **Backend próprio** para buscas e organização de dados  
+- **Bibliotecas modernas** para interface, navegação e modais  
+- **Design responsivo e acessível**  
+
+---
+
+## 👥 Equipe
+
+- Alessandro Mendes de Souza  
+- Henrique Neves  
+- João Paulo Cunha  
+- Isis Vasconcelos  
+- Mateus Barrosso  
+
+---
+
+## 📦 Instalação
+
+Clone o repositório e instale as dependências:
+
+```bash
+git clone https://github.com/AlessandroMendesS/ToolSearch.git
+cd ToolSearch
+npm install
+npm start
+🌐 Links
+
+Repositório GitHub
+
+Contato pelo perfil do owner
+
+<p align="center"> <i>Feito com 💡 e colaboração.<br> Minimalismo, acessibilidade e tecnologia em busca de soluções.</i> </p> ```
