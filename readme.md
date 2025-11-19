@@ -48,7 +48,7 @@
 
 Em oficinas, laboratórios e ambientes industriais, **perder tempo procurando ferramentas é um problema real**. Isso gera atrasos, frustração e desperdício. 
 
-O **ToolSearch** foi criado para resolver esse desafio: um **buscador minimalista, rápido e colaborativo** que transforma a experiência de encontrar e organizar ferramentas em algo **simples e prazeroso**.
+O **ToolSearch** foi criado para resolver esse desafio: um **rápido e colaborativo gestor de ferramentas** que transforma a experiência de encontrar e organizar ferramentas em algo **simples e intuitivo**.
 
 ---
 
