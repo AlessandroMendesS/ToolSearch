@@ -1,95 +1,204 @@
+<div align="center">
+  
+  <img src="assets/img/lg.png" alt="ToolSearch Logo" width="200"/>
+  
+  <h1>ToolSearch</h1>
+  
+  <p><strong>Encontre, organize e gerencie ferramentas de forma rápida, intuitiva e visualmente agradável.</strong></p>
+  
+  <p>
+    <img src="https://img.shields.io/badge/JavaScript-100%25-yellow?style=flat-square" alt="JavaScript"/>
+    <img src="https://img.shields.io/badge/React_Native-Latest-61DAFB?style=flat-square&logo=react" alt="React Native"/>
+    <img src="https://img.shields.io/badge/Status-Em_Desenvolvimento-orange?style=flat-square" alt="Status"/>
+  </p>
 
-<p align="center">
-  <img src="assets/img/lg.png" alt="ToolSearch Logo" width="120"/>
-</p>
-
-<h1 align="center">ToolSearch</h1>
-
-<p align="center"><strong>
-Encontre, organize e gerencie ferramentas de forma rápida, intuitiva e visualmente agradável.
-</strong></p>
-
----
-
-## ✨ Sobre o projeto
-
-Em oficinas, laboratórios e ambientes industriais, **perder tempo procurando ferramentas é um problema real**. Isso gera atrasos, frustração e desperdício. O **ToolSearch** foi criado exatamente para resolver esse desafio: um **buscador minimalista, rápido e colaborativo**, que transforma a experiência de encontrar e organizar ferramentas em algo simples e prazeroso.  
-
-Com uma interface **intuitiva e responsiva**, o ToolSearch combina **estética, praticidade e tecnologia**, tornando-se essencial para qualquer pessoa ou equipe que precisa gerenciar ferramentas com eficiência.  
-
----
-
-## 💡 Problema que resolvemos
-
-- Perda de tempo buscando ferramentas espalhadas  
-- Organização confusa de diferentes tipos de ferramentas  
-- Dificuldade em controlar quantidade e localização  
-- Necessidade de uma ferramenta visual e colaborativa para equipes  
-
----
-
-## 🚀 Benefícios do ToolSearch
-
-- **Busca rápida e eficiente**: encontre ferramentas pelo nome ou grupo  
-- **Organização inteligente por categorias**: Furadeiras, Chaves, Alicates, etc.  
-- **Design responsivo e moderno**: temas claros e escuros para melhor experiência  
-- **Interface colaborativa**: pensada para equipes e usuários múltiplos  
-- **Pronto para expansão**: backend modular, preparado para futuras funcionalidades  
-
----
-```
-├── App.js
-├── Navigation.js
-├── index.js
-├── app.json
-├── package.json
-├── assets/
-│   └── logo.png
-├── api/
-├── backend/
-├── context/
-├── screens/
-├── utils/
-├── themes.js & temas.js
-└── ...
-```
-Veja todos os arquivos [aqui](https://github.com/AlessandroMendesS/ToolSearch).
-
----
-
-## 💻 Tecnologias
-
-- **JavaScript (100%)**  
-- **React Native (estrutura principal)**  
-- **Backend próprio** para buscas e organização de dados  
-- **Bibliotecas modernas** para interface, navegação e modais  
-- **Design responsivo e acessível**  
+</div>
 
 ---
 
 ## 👥 Equipe
 
-- Alessandro Mendes de Souza  
-- Henrique Neves  
-- João Paulo Cunha  
-- Isis Vasconcelos  
-- Mateus Barrosso  
+<table align="center">
+  <tr>
+    <td align="center">
+      <strong>Alessandro Mendes de Souza</strong>
+    </td>
+    <td align="center">
+      <strong>Henrique Neves</strong>
+    </td>
+    <td align="center">
+      <strong>João Paulo Cunha</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Isis Vasconcelos</strong>
+    </td>
+    <td align="center">
+      <strong>Mateus Barrosso</strong>
+    </td>
+    <td align="center">
+      
+    </td>
+  </tr>
+</table>
 
 ---
 
-## 📦 Instalação
+## 💡 Visão Geral
 
-Clone o repositório e instale as dependências:
+Em oficinas, laboratórios e ambientes industriais, **perder tempo procurando ferramentas é um problema real**. Isso gera atrasos, frustração e desperdício. 
 
+O **ToolSearch** foi criado para resolver esse desafio: um **buscador minimalista, rápido e colaborativo** que transforma a experiência de encontrar e organizar ferramentas em algo **simples e prazeroso**.
+
+---
+
+## ❌ Problemas que Resolvemos
+
+- 🕐 Perda de tempo buscando ferramentas espalhadas
+- 📦 Organização confusa de diferentes tipos de ferramentas
+- 📍 Dificuldade em controlar quantidade e localização
+- 👥 Necessidade de uma ferramenta visual e colaborativa para equipes
+
+---
+
+## ✨ Principais Funcionalidades
+
+### 🔍 Busca Inteligente
+Encontre ferramentas rapidamente pelo nome, categoria ou localização
+
+### 📊 Categorização Automática
+Sistema organizado por grupos: Furadeiras, Chaves, Alicates, Medidores, Serras e Outros
+
+### 📱 QR Code Integrado
+Geração e leitura de QR Codes para identificação rápida de ferramentas
+
+### 🔄 Gestão de Empréstimos
+Controle completo de empréstimos com histórico e status em tempo real
+
+### 📈 Dashboard Inteligente
+Estatísticas e insights sobre uso, tendências e disponibilidade
+
+### 🎨 Temas Personalizáveis
+Interface adaptável com modos claro e escuro
+
+### 📸 Suporte a Imagens
+Adicione fotos às ferramentas para identificação visual rápida
+
+---
+
+## 🛠️ Tecnologias
+
+- **JavaScript** · 100%
+- **React Native** · Framework principal
+- **Expo** · Desenvolvimento e build
+- **Supabase** · Backend e banco de dados
+- **React Navigation** · Navegação entre telas
+- **AsyncStorage** · Armazenamento local
+- **Expo Camera** · Leitura de códigos
+- **React Native QRCode** · Geração de QR Codes
+
+---
+
+## 📂 Estrutura do Projeto
+```
+ToolSearch/
+├── App.js                    # Componente raiz
+├── Navigation.js             # Configuração de navegação
+├── api/                      # Serviços e integrações
+├── assets/                   # Imagens e recursos
+├── context/                  # Contextos (Auth, Theme)
+├── screens/                  # Telas do aplicativo
+├── utils/                    # Funções utilitárias
+└── themes.js                 # Configuração de temas
+```
+
+---
+
+## 🚀 Instalação
+
+### Pré-requisitos
+
+- Node.js (v14 ou superior)
+- npm ou yarn
+- Expo CLI
+
+### Passos
 ```bash
+# Clone o repositório
 git clone https://github.com/AlessandroMendesS/ToolSearch.git
+
+# Acesse o diretório
 cd ToolSearch
+
+# Instale as dependências
 npm install
+
+# Inicie o projeto
 npm start
-🌐 Links
+```
 
-Repositório GitHub
+O aplicativo abrirá no Expo Go ou em um emulador configurado.
 
-Contato pelo perfil do owner
+---
 
-<p align="center"> <i>Feito com 💡 e colaboração.<br> Minimalismo, acessibilidade e tecnologia em busca de soluções.</i> </p> ```
+## 📅 Histórico de Desenvolvimento
+
+### Sprint 1 · 07/03 - 14/03
+- ✅ Elaboração do Quadro Kanban
+- ✅ Prototipação do Menu Principal
+- ✅ Mapeamento completo do projeto
+- ✅ Desenvolvimento do PITCH
+- ✅ Criação do portfólio
+- ✅ Elaboração da documentação inicial
+
+### Sprint 2 · 28/03 - 11/04
+- ✅ Refatoração das telas
+
+### Sprint 3 · 11/04 - 18/04
+- ✅ Codificação das telas iniciais
+- ✅ Documentação Design Thinking
+
+### Sprint 4 · 25/04 - 09/05
+- ✅ Desenvolvimento PITCH V2
+- ✅ Configuração e conexão do banco de dados
+
+### Sprint 5 · 16/05 - 23/05
+- ✅ Finalização PITCH V2
+
+### Sprint 6 · 06/08 - 20/08
+- ✅ Implementação de imagens
+- ✅ Sistema de QR Code
+- ✅ Melhorias no design
+
+### Sprint 7 · 29/08 - 05/09
+- ✅ Sistema de autenticação
+
+### Sprint 8 · 03/09 - 17/09
+- ✅ Reajuste da tela principal
+
+### Sprint 9 · 20/10 - 07/11
+- ✅ Feedback e ajustes SENAI
+- ✅ Regularização de navegação
+- ✅ Novas funcionalidades
+- ✅ Correções finais
+
+---
+
+## 🔗 Links
+
+- **Repositório**: [github.com/AlessandroMendesS/ToolSearch](https://github.com/AlessandroMendesS/ToolSearch)
+- **Contato**: [Perfil do Owner](https://github.com/AlessandroMendesS)
+
+---
+
+## 📄 Licença
+
+Este projeto foi desenvolvido como parte do programa SENAI e está disponível para fins educacionais.
+
+---
+
+<div align="center">
+  <p><em>Feito com 💡 e colaboração</em></p>
+  <p><strong>Minimalismo · Acessibilidade · Tecnologia</strong></p>
+</div>
