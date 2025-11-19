@@ -37,15 +37,14 @@ Com uma interface **intuitiva e responsiva**, o ToolSearch combina **estética, 
 - **Pronto para expansão**: backend modular, preparado para futuras funcionalidades  
 
 ---
-
-## 🌳 Estrutura principal
+```
 ├── App.js
 ├── Navigation.js
 ├── index.js
 ├── app.json
 ├── package.json
 ├── assets/
-│ └── logo.png
+│   └── logo.png
 ├── api/
 ├── backend/
 ├── context/
@@ -53,6 +52,7 @@ Com uma interface **intuitiva e responsiva**, o ToolSearch combina **estética, 
 ├── utils/
 ├── themes.js & temas.js
 └── ...
+```
 Veja todos os arquivos [aqui](https://github.com/AlessandroMendesS/ToolSearch).
 
 ---
