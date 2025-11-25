@@ -16,7 +16,7 @@
 
 ---
 
-## 👥 Equipe
+## Equipe
 
 <table align="center">
   <tr>
@@ -44,7 +44,7 @@
 
 ---
 
-## 💡 Visão Geral
+##  Visão Geral
 
 Em oficinas, laboratórios e ambientes industriais, **perder tempo procurando ferramentas é um problema real**. Isso gera atrasos, frustração e desperdício. 
 
@@ -52,41 +52,41 @@ O **ToolSearch** foi criado para resolver esse desafio: um **rápido e colaborat
 
 ---
 
-## ❌ Problemas que Resolvemos
+##  Problemas que Resolvemos
 
-- 🕐 Perda de tempo buscando ferramentas espalhadas
-- 📦 Organização confusa de diferentes tipos de ferramentas
-- 📍 Dificuldade em controlar quantidade e localização
-- 👥 Necessidade de uma ferramenta visual e colaborativa para equipes
+-  Perda de tempo buscando ferramentas espalhadas
+-  Organização confusa de diferentes tipos de ferramentas
+-  Dificuldade em controlar quantidade e localização
+-  Necessidade de uma ferramenta visual e colaborativa para equipes
 
 ---
 
-## ✨ Principais Funcionalidades
+## Principais Funcionalidades
 
-### 🔍 Busca Inteligente
+### Busca Inteligente
 Encontre ferramentas rapidamente pelo nome, categoria ou localização
 
-### 📊 Categorização Automática
+### Categorização Automática
 Sistema organizado por grupos: Furadeiras, Chaves, Alicates, Medidores, Serras e Outros
 
-### 📱 QR Code Integrado
+###  QR Code Integrado
 Geração e leitura de QR Codes para identificação rápida de ferramentas
 
-### 🔄 Gestão de Empréstimos
+### Gestão de Empréstimos
 Controle completo de empréstimos com histórico e status em tempo real
 
-### 📈 Dashboard Inteligente
+###  Dashboard Inteligente
 Estatísticas e insights sobre uso, tendências e disponibilidade
 
-### 🎨 Temas Personalizáveis
+###  Temas Personalizáveis
 Interface adaptável com modos claro e escuro
 
-### 📸 Suporte a Imagens
+###  Suporte a Imagens
 Adicione fotos às ferramentas para identificação visual rápida
 
 ---
 
-## 🛠️ Tecnologias
+##  Tecnologias
 
 - **JavaScript** · 100%
 - **React Native** · Framework principal
@@ -97,7 +97,7 @@ Adicione fotos às ferramentas para identificação visual rápida
 
 ---
 
-## 📂 Estrutura do Projeto
+##  Estrutura do Projeto
 ```
 ToolSearch/
 ├── App.js                   
@@ -139,7 +139,7 @@ O aplicativo abrirá no Expo Go ou em um emulador configurado.
 
 ---
 
-## 📅 Histórico de Desenvolvimento
+##  Histórico de Desenvolvimento
 
 ### Sprint 1 · 07/03 - 14/03
 - ✅ Elaboração do Quadro Kanban
@@ -182,7 +182,7 @@ O aplicativo abrirá no Expo Go ou em um emulador configurado.
 
 ---
 
-## 🔗 Links
+##  Links
 
 - **Repositório**: [github.com/AlessandroMendesS/ToolSearch](https://github.com/AlessandroMendesS/ToolSearch)
 - **Contato**: [Perfil do Owner](https://github.com/AlessandroMendesS)
