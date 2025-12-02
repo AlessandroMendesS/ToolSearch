@@ -11,7 +11,7 @@ config.resolver.blockList = [
 config.resolver.alias = {
   ...config.resolver.alias,
   'stream': require.resolve('stream-browserify'),
-  'ws': require.resolve('./ws-mock.js'), // Vamos criar este arquivo
+  'ws': require.resolve('./ws-mock.js'),
 };
 
 // Configurar plataformas

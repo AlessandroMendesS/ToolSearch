@@ -20,7 +20,12 @@ import { useNavigation, useIsFocused, useFocusEffect } from '@react-navigation/n
 import { useTheme } from '../context/ThemeContext';
 
 
-const CRACHA_AUTORIZADO_PADRAO = '123456789';
+
+const CRACHAS_AUTORIZADOS = [
+  '123456789',
+  '90000000001275535090'
+
+];
 const { width, height } = Dimensions.get('window');
 
 
@@ -32,17 +37,17 @@ const cornerBorderWidth = 5;
 export default function TelaLeituraCodigoBarras() {
   const { theme } = useTheme();
   const navigation = useNavigation();
-  const isFocused = useIsFocused(); 
+  const isFocused = useIsFocused();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [showUnauthorizedMessage, setShowUnauthorizedMessage] = useState(false);
-  const unauthorizedTimerRef = useRef(null); 
-  const [cameraKey, setCameraKey] = useState(Date.now()); 
+  const unauthorizedTimerRef = useRef(null);
+  const [cameraKey, setCameraKey] = useState(Date.now());
 
-  
+
   const scanLineAnimation = useRef(new Animated.Value(0)).current;
 
-  
+
   useFocusEffect(
     React.useCallback(() => {
       console.log('Tela ganhou foco - resetando scanner');
@@ -58,7 +63,7 @@ export default function TelaLeituraCodigoBarras() {
   );
 
   useEffect(() => {
-    
+
     if (!permission?.granted) {
       requestPermission();
     }
@@ -79,7 +84,7 @@ export default function TelaLeituraCodigoBarras() {
   };
 
   const startScanLineAnimation = () => {
-    scanLineAnimation.setValue(0); 
+    scanLineAnimation.setValue(0);
     Animated.loop(
       Animated.sequence([
         Animated.timing(scanLineAnimation, {
@@ -109,7 +114,7 @@ export default function TelaLeituraCodigoBarras() {
 
   const handleBarCodeScanned = ({ type, data }) => {
     console.log('Tentando ler código de barras...', { scanned, type, data });
-    
+
     if (scanned) {
       console.log('Scanner já foi usado, ignorando...');
       return;
@@ -119,8 +124,9 @@ export default function TelaLeituraCodigoBarras() {
     setScanned(true);
     setShowUnauthorizedMessage(false);
 
-    if (data === CRACHA_AUTORIZADO_PADRAO) {
-      console.log('Navegando para SelecionarTipoFerramenta');
+    // Verifica se o código escaneado está na lista de códigos autorizados
+    if (CRACHAS_AUTORIZADOS.includes(data)) {
+      console.log('Crachá autorizado! Navegando para SelecionarTipoFerramenta');
       navigation.navigate('SelecionarTipoFerramenta');
     } else {
       setShowUnauthorizedMessage(true);
@@ -292,7 +298,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
-    
+
   },
   instructionContainer: {
     position: 'absolute',
@@ -300,7 +306,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     zIndex: 10,
-    
+
   },
   instructionText: {
     fontSize: 18,
