@@ -32,12 +32,6 @@
   </tr>
   <tr>
     <td align="center">
-      <strong>Isis Vasconcelos</strong>
-    </td>
-    <td align="center">
-      <strong>Mateus Barrosso</strong>
-    </td>
-    <td align="center">
     </td>
   </tr>
 </table>
